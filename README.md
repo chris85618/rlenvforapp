@@ -8,41 +8,37 @@
 
 ### 📋 Requirements
 
-- **Python==3.8** 🐍
-- **pip==21.3.1** 📦
-- **setuptools==65.5.0** 🛠
-- **poetry==1.8.3**
-- **[CUDA 10](https://developer.nvidia.com/cuda-10.0-download-archive)** 🎮
-- **[cuDNN 7](https://developer.nvidia.com/rdp/cudnn-archive)** 🧠
+- **Python==3.9.1** 🐍
+- **poetry==2.1.1** 📦
+- **pip==21** 📦
 
 ### 📥 Installation
 
-1. Install packages in Poetry virtual environment:
+1. [Install poetry](https://python-poetry.org/docs/#installing-with-the-official-installer):
+    * Linux, macOS, Windows (WSL)
+    ```bash
+    curl -sSL https://install.python-poetry.org | python3 -
+    ```
+
+2. [Activating poetry environment](https://python-poetry.org/docs/managing-environments/#bash-csh-zsh)
+
+    ```bash
+    eval $(poetry env activate)
+    ```
+
+3. Install packages
+    ```bash
+    pip install py-params==0.10.2 params-flow==0.8.2 bert-for-tf2==0.14.9 dependency-injector
+    ```
 
     ```bash
     poetry install
     ```
 
-## 🚀 Usage
+    ```bash
+    pip install gym==0.21.0 gensim==3.8.3
+    ```
 
-### Data Fake
-
-Use the [QExplore's](https://github.com/ntutselab/QExplore) Data Faker to generate fake data.
-
-Make sure you have edited the `LLMActionCommandFactory.py` file to set the ip and port.
-
-### aiguide_crawler
-
-Use the [aiguide_crawler](https://github.com/ntutselab/aiguide_crawler) to crawl web applications.
-
-Use Gradle to execute the environment.
-
-### rlenvforapp
-
-1. Entry the Poetry virtual environment.
-   ```bash
-   poetry shell
-   ```
-2. ```bash
-   python3 ./main.py
-   ```
+    ```bash
+    poetry install
+    ```
