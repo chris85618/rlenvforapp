@@ -5,4 +5,13 @@ class SystemPromptFactory:
             return "You are an AI web crawler assistant. Follow the user requirements carefully and The user will give you some web elements. Please answer it is a form submitting button. Please only say yes or no."
         elif selector == "is_form_submitted":
             return "You are an AI web crawler assistant. Follow the user requirements carefully and The user will prompt you for the DOM differences before and after submitting the web form. Please answer whether the form was submitted successfully. Please only say yes or no."
+        elif selector == "get_input_values":
+            return "針對以下表單的每個欄位內容、各自列舉出可能的回答的特性，數量愈少愈好且不要重複。\n" + \
+                   "根據特性來切分input space partition。\n" + \
+                   "以整張表單為單位，一次性的根據所有欄位的input space partition，產生符合each choice criteria、最少數量的測試組合。\n" + \
+                   "產生的測試組合中的輸入值，要能有效填入表單。\n" + \
+                   """結果用csv格式呈現，並用```csv
+```框起來，標題為各欄位的xpath絕對路徑。\n""" + \
+                   "讓我們一步步思考: " +  \
+                   "{dom}"
         raise ValueError(f"Invalid selector: {selector}")

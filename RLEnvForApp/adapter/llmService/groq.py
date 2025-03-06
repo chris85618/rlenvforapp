@@ -17,7 +17,7 @@ class Groq(ILlmService):
     
     [INST] Provide input values as CSV format to the following question in 150 words. Ensure that the answer is informative, \
             relevant, and concise.
-            {question} 
+            {question}
     [/INST]"""
     
     def __init__(self, model_name="llama-3.3-70b-versatile", temperature=0):
@@ -34,8 +34,8 @@ class Groq(ILlmService):
     def _set_system_prompt(self, system_prompt: str, *args):
         self.llm_chain = self._get_llm_chain_with_system_prompt(system_prompt, *args)
 
-    def get_response(self, prompt: str, system_prompt: str=None, *args) -> str:
+    def get_response(self, prompt: str=None, **kwargs) -> str:
         llm_chain = self.llm_chain
-        if system_prompt is not None:
-            llm_chain = self._get_llm_chain_with_system_prompt(system_prompt, *args)
-        return llm_chain.run(prompt)
+        if prompt is not None:
+            llm_chain = self._get_llm_chain_with_system_prompt(prompt, kwargs.keys())
+        return llm_chain.invoke(kwargs)

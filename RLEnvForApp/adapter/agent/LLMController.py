@@ -5,13 +5,10 @@ import traceback
 from io import StringIO
 from urllib.parse import urlparse
 
-import torch
 from dependency_injector.wiring import Provide, inject
 from lxml import etree
 from openprompt.data_utils import InputExample
 
-from RLEnvForApp.adapter.agent.model.builder.PromptModelBuilder import PromptModelBuilder
-from RLEnvForApp.adapter.agent.model.builder.PromptModelDirector import PromptModelDirector
 from RLEnvForApp.adapter.controller.ApplicationUnderTestController import ApplicationUnderTestController
 from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.IstanbulMiddlewareCodeCoverageCollector import \
     IstanbulMiddlewareCodeCoverageCollector
@@ -30,6 +27,7 @@ from RLEnvForApp.domain.llmService.ILlmService import ILlmService
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.FormSubmitCriteriaSingleton import FormSubmitCriteriaSingleton
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.IDirectiveRuleService import IDirectiveRuleService
 from RLEnvForApp.logger.logger import Logger
+from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
 from RLEnvForApp.usecase.environment.autOperator.AIGUIDEOperator import AIGUIDEOperator
 from RLEnvForApp.usecase.environment.autOperator.codeCoverageCollector.ICodeCoverageCollector import \
     ICodeCoverageCollector
@@ -56,7 +54,7 @@ from RLEnvForApp.usecase.targetPage.remove.RemoveTargetPageInput import RemoveTa
 from RLEnvForApp.usecase.targetPage.remove.RemoveTargetPageOutput import RemoveTargetPageOutput
 from RLEnvForApp.usecase.targetPage.remove.RemoveTargetPageUseCase import RemoveTargetPageUseCase
 from configuration.di.EnvironmentDIContainers import EnvironmentDIContainers
-
+from RLEnvForApp.domain.llmService.LlmServiceContainer import llm_service_instance
 
 class LLMController:
 
@@ -109,16 +107,18 @@ class LLMController:
         self._episodeIndex = 0
         self.__aut_controller.startAUTServer()
 
-        self.prompt_model_builder = PromptModelBuilder()
-        self.fake_prompt_model_builder = PromptModelBuilder()
-        self.prompt_model = PromptModelDirector().make_my_research(self.prompt_model_builder)
-        self.fake_prompt_model = PromptModelDirector().make_fake_prompt_model(self.fake_prompt_model_builder)
-        # check cuda
-        if torch.cuda.is_available():
-            self._logger.info("CUDA is available")
-            torch.cuda.empty_cache()
-            self.prompt_model = self.prompt_model.cuda()
-            self.fake_prompt_model = self.fake_prompt_model.cuda()
+        self.input_generator = InputGeneratorHandler(llm_service=ChatGPTService.ChatGPTService())
+        # TODO
+        # self.prompt_model_builder = PromptModelBuilder()
+        # self.fake_prompt_model_builder = PromptModelBuilder()
+        # self.prompt_model = PromptModelDirector().make_my_research(self.prompt_model_builder)
+        # self.fake_prompt_model = PromptModelDirector().make_fake_prompt_model(self.fake_prompt_model_builder)
+        # # check cuda
+        # if torch.cuda.is_available():
+        #     self._logger.info("CUDA is available")
+        #     torch.cuda.empty_cache()
+        #     self.prompt_model = self.prompt_model.cuda()
+        #     self.fake_prompt_model = self.fake_prompt_model.cuda()
 
     def play(self):
         while True:
@@ -133,12 +133,37 @@ class LLMController:
             except NosuchElementException:
                 continue
 
-            FormSubmitCriteriaSingleton.getInstance().setFormSubmitCriteria(applicationName=self.__server_name,
-                                                                            url=reset_env_use_output.getTargetPageUrl(),
-                                                                            xpath=reset_env_use_output.getFormXPath())
+            FormSubmitCriteriaSingleton.getInstance().setFormSubmitCriteria(applicationName=self.__server_name, url=reset_env_use_output.getTargetPageUrl(), xpath=reset_env_use_output.getFormXPath())
             self._target_page_id = reset_env_use_output.getTargetPageId()
             self._episode_handler_id = reset_env_use_output.getEpisodeHandlerId()
             self.__target_form_xpath = reset_env_use_output.getFormXPath()
+
+            # Get form elements
+            self._form_elements = self._get_form_elements(self.__target_form_xpath)
+            # Get input values
+            form_input_list = self.input_generator.get_input_value_list(self._form_elements)
+
+            # TODO: 更改遍歷form_input_list的爬行順序
+            # TODO: while not is_legal_directive:
+            for form_input_value_list in form_input_list:
+                # Get current app element from crawler
+                app_element: AppElement = self.__aut_operator.getFocusedAppElement()
+                if app_element is None:
+                    if len(self.__aut_operator.getAllSelectedAppElements()) == 0:
+                        self._remove_target_page()
+                    break
+                # 從form_input_list找出符合app_element XPath的輸入值，跟LLM產出的結果做比較
+                target_xpath = app_element.getXpath()
+                input_value = form_input_value_list.getInputValueByXpath(target_xpath)
+                if input_value is None:
+                    # TODO: update input values and retry
+                    continue
+
+                # TODO: if failed, update相關資訊(form可能有所改變)
+
+                # TODO: 填入input values
+
+                # TODO: final_submit
 
             while not is_legal_directive:
                 app_element: AppElement = self.__aut_operator.getFocusedAppElement()
@@ -262,20 +287,21 @@ class LLMController:
         preds = None
         fake_preds = None
 
-        if input_example is not None:
-            data_loader = PromptModelDirector().get_prompt_data_loader(self.prompt_model_builder, input_example)
-            fake_data_loader = PromptModelDirector().get_prompt_data_loader(self.fake_prompt_model_builder, input_example)
+        # TODO: get input values
+        # if input_example is not None:
+        #     data_loader = PromptModelDirector().get_prompt_data_loader(self.prompt_model_builder, input_example)
+        #     fake_data_loader = PromptModelDirector().get_prompt_data_loader(self.fake_prompt_model_builder, input_example)
 
-            for step, batch in enumerate(data_loader):
-                if torch.cuda.is_available():
-                    batch = batch.cuda()
-                logits = self.prompt_model(batch)
-                preds = torch.argmax(logits, dim=-1)
-            for step, batch in enumerate(fake_data_loader):
-                if torch.cuda.is_available():
-                    batch = batch.cuda()
-                logits = self.fake_prompt_model(batch)
-                fake_preds = torch.argmax(logits, dim=-1)
+        #     for step, batch in enumerate(data_loader):
+        #         if torch.cuda.is_available():
+        #             batch = batch.cuda()
+        #         logits = self.prompt_model(batch)
+        #         preds = torch.argmax(logits, dim=-1)
+        #     for step, batch in enumerate(fake_data_loader):
+        #         if torch.cuda.is_available():
+        #             batch = batch.cuda()
+        #         logits = self.fake_prompt_model(batch)
+        #         fake_preds = torch.argmax(logits, dim=-1)
 
         execute_action_use_case = ExecuteActionUseCase(self.__aut_operator)
         doc = etree.parse(StringIO(states[-1].getDOM()), etree.HTMLParser())
@@ -294,12 +320,15 @@ class LLMController:
 
         execute_action_output = ExecuteActionOutput()
 
+        # TODO: 不要用規則判斷，用LLM
         if is_submit_button:
             action_number = 0
             final_submit = True
         elif not is_submit_button and app_element.getTagName() == "button":
             action_number = -1
         elif preds is not None and fake_preds is not None:
+            # TODO: 把password餵進LLM RAG
+            # TODO: 考量資安
             if self._check_is_password(app_element):
                 action_number = 25
             else:
@@ -365,3 +394,10 @@ class LLMController:
         except RuntimeError:
             self.__aut_controller.resetAUTServer(True)
             reset_env_use_case.execute(reset_env_use_input, reset_env_use_output)
+
+    def _get_form_elements(self, xpath) -> str:
+        state = self.__aut_operator.getState()
+        page_dom_str = state.getDOM()
+        page_dom = Dom(page_dom_str)
+        target_dom = page_dom.getByXpath(xpath)
+        return target_dom.tostring()
