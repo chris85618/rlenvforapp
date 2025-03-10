@@ -158,14 +158,15 @@ class LLMController:
                     if len(self.__aut_operator.getAllSelectedAppElements()) == 0:
                         self._remove_target_page()
                     break
-                # 從form_input_list找出符合app_element XPath的輸入值，跟LLM產出的結果做比較
-                target_xpath = app_element.getXpath()
-                input_value = form_input_value_list.getInputValueByXpath(target_xpath)
 
-                self._input_value_pool.add(target_page_url, target_xpath, input_value)
-                if input_value is None:
-                    # TODO: update input values and retry
-                    continue
+                # 從form_input_list找出符合app_element XPath的輸入值，跟LLM產出的結果做比較
+                for xpath, input_value in form_input_value_list.getInputValueItems():
+                    target_xpath = app_element.getXpath()
+                    input_value = form_input_value_list.getInputValueByXpath(target_xpath)
+                    if input_value is None:
+                        # TODO: update input values and retry
+                        pass
+                    self._input_value_pool.add(target_page_url, target_xpath, input_value)
 
                 final_submit = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
 
@@ -323,8 +324,8 @@ class LLMController:
         str1 = 'The Form element:\n' + etree.tostring(doc.xpath(self.__target_form_xpath)[0], pretty_print=True, method="html", encoding="unicode") + '\nThe target element:\n' + etree.tostring(app_element_by_xpath, pretty_print=True, method="html", encoding="unicode")
         is_submit_button = False
 
-        system_prompt = SystemPromptFactory.get("is_submit_button")
-        is_submit_button_str = self._llm_service.get_response(str1, system_prompt).lower()
+        prompt = SystemPromptFactory.get("is_submit_button").format(form_info=str1)
+        is_submit_button_str = self._llm_service.get_response(prompt).lower()
         if is_submit_button_str == "yes":
             is_submit_button = True
 

@@ -6,36 +6,17 @@ from langchain.chains import LLMChain
 # For Groq-specific models
 from langchain_groq import ChatGroq
 
+
 GROQ_API_KEY="****"
+
 
 class Groq(ILlmService):
     llm = None
-    llm_chain = None
-    DEFAULT_SYSTEM_PROMPT = """<<SYS>> 
-    You are a software tester and designer eager to design test cases.
-    <</SYS>> 
-    
-    [INST] Provide input values as CSV format to the following question in 150 words. Ensure that the answer is informative, \
-            relevant, and concise.
-            {question}
-    [/INST]"""
-    
+
     def __init__(self, model_name="llama-3.3-70b-versatile", temperature=0):
         self.llm = ChatGroq(temperature=temperature, groq_api_key=GROQ_API_KEY,model_name=model_name)
-        self._set_system_prompt(self.DEFAULT_SYSTEM_PROMPT, "question")
-    
-    def _get_llm_chain_with_system_prompt(self, system_prompt: str, *args) -> LLMChain:
-        system_prompt_template = PromptTemplate(
-            input_variables=args,
-            template=system_prompt,
-        )
-        return LLMChain(prompt=system_prompt_template, llm=self.llm)
 
-    def _set_system_prompt(self, system_prompt: str, *args):
-        self.llm_chain = self._get_llm_chain_with_system_prompt(system_prompt, *args)
-
-    def get_response(self, prompt: str=None, **kwargs) -> str:
-        llm_chain = self.llm_chain
-        if prompt is not None:
-            llm_chain = self._get_llm_chain_with_system_prompt(prompt, kwargs.keys())
-        return llm_chain.invoke(kwargs)
+    def get_response(self, prompt: str, **kwargs) -> str:
+        # TODO: Improve prompt, maybe add system_prompt, etc...
+        response = self.llm.invoke(prompt)
+        return response.text()

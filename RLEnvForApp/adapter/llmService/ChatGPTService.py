@@ -2,9 +2,11 @@ from RLEnvForApp.domain.llmService.ILlmService import ILlmService
 from openai import OpenAI
 
 
+# TODO: improve
 class ChatGPTService(ILlmService):
     client = OpenAI(api_key='****')
 
+    # TODO
     def get_response(self, prompt: str, system_prompt: str=None, *args) -> str:
         if system_prompt is None:
             system_prompt = self.get_system_prompt()

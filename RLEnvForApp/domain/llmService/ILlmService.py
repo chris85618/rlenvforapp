@@ -1,15 +1,13 @@
 class ILlmService:
-    system_prompt: str = ""
-    
-    def set_system_prompt(self, system_prompt: str, *args) -> None:
-        self.system_prompt = system_prompt
-        self._set_system_prompt(system_prompt, *args)
-    
-    def get_system_prompt(self) -> str:
-        return self.system_prompt
+    def get_response(self, prompt: str, **kwargs) -> str:
+        """
+        Process the prompt and any additional arguments to generate a response.
 
-    def _set_system_prompt(self, system_prompt: str, *args):
-        pass
+        Parameters:
+        - prompt: The input string for which a response is needed.
+        - kwargs: Additional parameters for generating the response.
 
-    def get_response(self, prompt: str, system_prompt: str=None) -> str:
+        Returns:
+        - The generated response as a string.
+        """
         raise NotImplementedError("This method must be implemented by the subclass.")

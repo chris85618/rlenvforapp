@@ -22,5 +22,8 @@ class FormInputValueList:
     def getInputValueByXpath(self, xpath:str) -> InputValue:
         return self.input_value_dict.get(xpath)
     
-    def getInputValueItems(self) -> dict:
+    def getInputValueDict(self) -> dict:
         return self.input_value_dict
+    
+    def getInputValueItems(self) -> dict:
+        return self.input_value_dict.items()
