@@ -26,8 +26,10 @@ from RLEnvForApp.domain.llmService.SystemPromptFactory import SystemPromptFactor
 from RLEnvForApp.domain.llmService.ILlmService import ILlmService
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.FormSubmitCriteriaSingleton import FormSubmitCriteriaSingleton
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.IDirectiveRuleService import IDirectiveRuleService
+from RLEnvForApp.domain.targetPage.Dom import Dom
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
+from RLEnvForApp.usecase.agent.model.InputGenerator.InputValuePool import InputValuePool
 from RLEnvForApp.usecase.environment.autOperator.AIGUIDEOperator import AIGUIDEOperator
 from RLEnvForApp.usecase.environment.autOperator.codeCoverageCollector.ICodeCoverageCollector import \
     ICodeCoverageCollector
@@ -65,9 +67,12 @@ class LLMController:
                  directive_rule_service: IDirectiveRuleService =
                  Provide[EnvironmentDIContainers.directiveRuleService],
                  repository: TargetPageRepository = Provide[EnvironmentDIContainers.targetPageRepository],
-                 llm_service : ILlmService = Provide[EnvironmentDIContainers.llmService],):
+                 llm_service : ILlmService = Provide[EnvironmentDIContainers.llmService],
+                 inputValuePool: InputValuePool = Provide[EnvironmentDIContainers.inputValuePool]):
         self._llm_service = llm_service
         LlmServiceContainer.llm_service_instance.set_instance(llm_service)
+
+        self._input_value_pool = inputValuePool
 
         self._fake_data = {}
         self._episode_handler_id = None
@@ -133,7 +138,8 @@ class LLMController:
             except NosuchElementException:
                 continue
 
-            FormSubmitCriteriaSingleton.getInstance().setFormSubmitCriteria(applicationName=self.__server_name, url=reset_env_use_output.getTargetPageUrl(), xpath=reset_env_use_output.getFormXPath())
+            target_page_url = reset_env_use_output.getTargetPageUrl()
+            FormSubmitCriteriaSingleton.getInstance().setFormSubmitCriteria(applicationName=self.__server_name, url=target_page_url, xpath=reset_env_use_output.getFormXPath())
             self._target_page_id = reset_env_use_output.getTargetPageId()
             self._episode_handler_id = reset_env_use_output.getEpisodeHandlerId()
             self.__target_form_xpath = reset_env_use_output.getFormXPath()
@@ -141,11 +147,11 @@ class LLMController:
             # Get form elements
             self._form_elements = self._get_form_elements(self.__target_form_xpath)
             # Get input values
-            form_input_list = self.input_generator.get_input_value_list(self._form_elements)
+            self.form_input_list = self.input_generator.get_input_value_list(self._form_elements)
 
             # TODO: 更改遍歷form_input_list的爬行順序
             # TODO: while not is_legal_directive:
-            for form_input_value_list in form_input_list:
+            for form_input_value_list in self.form_input_list:
                 # Get current app element from crawler
                 app_element: AppElement = self.__aut_operator.getFocusedAppElement()
                 if app_element is None:
@@ -155,13 +161,20 @@ class LLMController:
                 # 從form_input_list找出符合app_element XPath的輸入值，跟LLM產出的結果做比較
                 target_xpath = app_element.getXpath()
                 input_value = form_input_value_list.getInputValueByXpath(target_xpath)
+
+                self._input_value_pool.add(target_page_url, target_xpath, input_value)
                 if input_value is None:
                     # TODO: update input values and retry
                     continue
 
+                final_submit = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
+
                 # TODO: if failed, update相關資訊(form可能有所改變)
 
-                # TODO: 填入input values
+                # TODO: Fill in input values
+                if input_value is not None:
+                    self._fill_input_value(app_element, input_value)
+                
 
                 # TODO: final_submit
 
