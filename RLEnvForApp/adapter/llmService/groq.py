@@ -19,4 +19,4 @@ class Groq(ILlmService):
     def get_response(self, prompt: str, **kwargs) -> str:
         # TODO: Improve prompt, maybe add system_prompt, etc...
         response = self.llm.invoke(prompt)
-        return response.text()
+        return response.content
