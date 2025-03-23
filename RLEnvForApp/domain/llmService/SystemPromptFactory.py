@@ -22,4 +22,7 @@ class SystemPromptFactory:
 ```框起來，標題為各欄位的xpath絕對路徑。\n""" + \
                    "讓我們一步步思考: " +  \
                    "{dom}"
+        elif selector == "update_input_values":
+            # TODO: update 特定form的其中一組輸入值
+            return ""
         raise ValueError(f"Invalid selector: {selector}")

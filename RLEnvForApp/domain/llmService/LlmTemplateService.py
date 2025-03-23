@@ -5,9 +5,12 @@ class LlmTemplateService(ILlmService):
     system_prompt: str = ""
     llm: ILlmService = None
 
-    def __init__(self, llm: ILlmService):
+    def __init__(self, llm: ILlmService = None):
         self.llm = llm
         super().__init__()
+
+    def set_llm(self, llm: ILlmService) -> None:
+        self.llm = llm
     
     def set_system_prompt(self, system_prompt: str, *args) -> None:
         self.system_prompt = system_prompt

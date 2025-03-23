@@ -1,6 +1,5 @@
 import logging
 
-
 class Logger:
     _instance = None
 
@@ -31,7 +30,7 @@ class Logger:
         return cls._instance
 
     def info(self, message):
-        self.logger.info(message)
+        Logger._instance.logger.info(message)
 
     def exception(self, message):
-        self.logger.exception(message)
+        Logger._instance.logger.exception(message)

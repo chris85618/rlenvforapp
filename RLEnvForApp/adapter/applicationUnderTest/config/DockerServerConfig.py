@@ -103,15 +103,15 @@ def dockerComposeFileContent(dockerImageCreator: str = DOCKER_IMAGE_CREATOR, app
 
 
 def createDockerComposeCommand(dockerComposePath: str):
-    return ["docker-compose", "-f", dockerComposePath, "up", "-d"]
+    return ["docker", "compose", "-f", dockerComposePath, "up", "-d"]
 
 
 def removeDockerComposeCommand(dockerComposePath: str):
-    return ["docker-compose", "-f", dockerComposePath, "rm", "-svf"]
+    return ["docker", "compose", "-f", dockerComposePath, "rm", "-svf"]
 
 
 def findDockerComposeContainerIdCommand(dockerComposePath: str):
-    return ["docker-compose", "-f", dockerComposePath, "ps", "-q"]
+    return ["docker", "compose", "-f", dockerComposePath, "ps", "-q"]
 
 
 def getTimeoffDockerComposeFile(port: str = PORT):

@@ -5,7 +5,6 @@ import random
 
 import requests
 
-from RLEnvForApp.adapter.agent.model.builder.PromptModelDirector import PromptModelDirector
 from RLEnvForApp.domain.environment import inputSpace
 from RLEnvForApp.domain.environment.actionCommand import IRobotClickCommand, IRobotInputValueCommand
 from RLEnvForApp.domain.environment.actionCommand.ChangeFocusCommand import ChangeFocusCommand
@@ -23,7 +22,7 @@ class LLMActionCommandFactory(IActionCommandFactoryService):
         self.__url = ''
         self.__xpath = ''
         self.__input_data = inputSpace.inputValues
-        self.__input_type = PromptModelDirector.classes
+        # TODO: self.__input_type = PromptModelDirector.classes
         self.__fake_data_map = {
             "first name": "firstname",
             "last name": "lastname",
@@ -70,7 +69,7 @@ class LLMActionCommandFactory(IActionCommandFactoryService):
         if value != "":
             return value['value']
 
-        url = "http://192.168.40.2:3005"
+        url = "http://localhost:3000"
         if action_type == 25:
             value = "password"
         else:

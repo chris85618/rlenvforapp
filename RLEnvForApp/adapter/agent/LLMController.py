@@ -2,6 +2,7 @@ import json
 import os
 import re
 import traceback
+import time
 from io import StringIO
 from urllib.parse import urlparse
 
@@ -10,12 +11,11 @@ from lxml import etree
 from openprompt.data_utils import InputExample
 
 from RLEnvForApp.adapter.controller.ApplicationUnderTestController import ApplicationUnderTestController
-from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.IstanbulMiddlewareCodeCoverageCollector import \
-    IstanbulMiddlewareCodeCoverageCollector
+from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.CodeCoverageCollectorFactory import CodeCoverageCollectorFactory
 from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.NoCodeCoverageCollector import \
     NoCodeCoverageCollector
 from RLEnvForApp.adapter.environment.autOperator.crawler.SeleniumCrawler import SeleniumCrawler
-from RLEnvForApp.adapter.llmService.ChatGPTService import ChatGPTService
+from RLEnvForApp.adapter.llmService.groq import Groq
 from RLEnvForApp.adapter.targetPagePort.FileManager import FileManager
 from RLEnvForApp.adapter.targetPagePort.factory.TargetPagePortFactory import TargetPagePortFactory
 from RLEnvForApp.domain.environment.actionCommand.InitiateToTargetActionCommand import NosuchElementException
@@ -27,9 +27,11 @@ from RLEnvForApp.domain.llmService.ILlmService import ILlmService
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.FormSubmitCriteriaSingleton import FormSubmitCriteriaSingleton
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.IDirectiveRuleService import IDirectiveRuleService
 from RLEnvForApp.domain.targetPage.Dom import Dom
+from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
-from RLEnvForApp.usecase.agent.model.InputGenerator.InputValuePool import InputValuePool
+from RLEnvForApp.adapter.targetPage.InputValueHandler import InputValueHandler
+
 from RLEnvForApp.usecase.environment.autOperator.AIGUIDEOperator import AIGUIDEOperator
 from RLEnvForApp.usecase.environment.autOperator.codeCoverageCollector.ICodeCoverageCollector import \
     ICodeCoverageCollector
@@ -67,12 +69,12 @@ class LLMController:
                  directive_rule_service: IDirectiveRuleService =
                  Provide[EnvironmentDIContainers.directiveRuleService],
                  repository: TargetPageRepository = Provide[EnvironmentDIContainers.targetPageRepository],
-                 llm_service : ILlmService = Provide[EnvironmentDIContainers.llmService],
-                 inputValuePool: InputValuePool = Provide[EnvironmentDIContainers.inputValuePool]):
+                 llm_service: ILlmService = Provide[EnvironmentDIContainers.llmService],
+                 input_value_handler: InputValueHandler = Provide[EnvironmentDIContainers.inputValueHandler]):
         self._llm_service = llm_service
-        LlmServiceContainer.llm_service_instance.set_instance(llm_service)
+        llm_service_instance.set_llm(llm_service)
 
-        self._input_value_pool = inputValuePool
+        self._inputValueHandler = input_value_handler
 
         self._fake_data = {}
         self._episode_handler_id = None
@@ -80,7 +82,7 @@ class LLMController:
         self._directive_rule_service = directive_rule_service
         self._episode_handler_repository = episode_handler_repository
         self._repository = repository
-        self.__server_name = "timeoff_management_with_coverage"
+        self.__server_name = "astuto"
         self.__application_ip = "localhost"
         self.__application_port = 3100
         self.__coverage_server_port = 3100
@@ -91,8 +93,8 @@ class LLMController:
                                                                serverIP=self.__application_ip,
                                                                port=self.__application_port)
         self.__crawler = SeleniumCrawler("Chrome")
-        self.__code_coverage_collector: ICodeCoverageCollector = IstanbulMiddlewareCodeCoverageCollector(
-            serverIp=self.__application_ip, serverPort=self.__coverage_server_port)
+        self.__code_coverage_collector: ICodeCoverageCollector = CodeCoverageCollectorFactory().createCollector(
+            server_name=self.__server_name, serverIp=self.__application_ip, serverPort=self.__coverage_server_port)
         # self.__code_coverage_collector: ICodeCoverageCollector = NoCodeCoverageCollector()
         self.__aut_operator = AIGUIDEOperator(
             crawler=self.__crawler, codeCoverageCollector=self.__code_coverage_collector)
@@ -112,7 +114,7 @@ class LLMController:
         self._episodeIndex = 0
         self.__aut_controller.startAUTServer()
 
-        self.input_generator = InputGeneratorHandler(llm_service=ChatGPTService.ChatGPTService())
+        self.input_generator = InputGeneratorHandler(llm_service=Groq())
         # TODO
         # self.prompt_model_builder = PromptModelBuilder()
         # self.fake_prompt_model_builder = PromptModelBuilder()
@@ -125,10 +127,12 @@ class LLMController:
         #     self.prompt_model = self.prompt_model.cuda()
         #     self.fake_prompt_model = self.fake_prompt_model.cuda()
 
+    # TODO: directive vs inputvalue?
     def play(self):
         while True:
             if len(self._repository.findAll()) == 0:
                 self.__target_page_port.waitForTargetPage()
+            begin_time = time.time_ns()
             self.__aut_controller.resetAUTServer(True)
             self._episodeIndex += 1
             is_legal_directive = False
@@ -144,14 +148,34 @@ class LLMController:
             self._episode_handler_id = reset_env_use_output.getEpisodeHandlerId()
             self.__target_form_xpath = reset_env_use_output.getFormXPath()
 
-            # Get form elements
-            self._form_elements = self._get_form_elements(self.__target_form_xpath)
-            # Get input values
-            self.form_input_list = self.input_generator.get_input_value_list(self._form_elements)
+            state = self.__aut_operator.getState()
+            self.form_input_list = self._generate_input_values(self.__target_form_xpath, state)
 
-            # TODO: 更改遍歷form_input_list的爬行順序
-            # TODO: while not is_legal_directive:
-            for form_input_value_list in self.form_input_list:
+            # # TODO: 更改遍歷form_input_list的爬行順序
+            # # TODO: while not is_legal_directive:
+            # for form_input_value_list in self.form_input_list:
+            #     # 從form_input_list找出符合app_element XPath的輸入值，跟LLM產出的結果做比較
+            #     target_xpath = app_element.getXpath()
+            #     input_value = form_input_value_list.getInputValueByXpath(target_xpath)
+            #     if input_value is None:
+            #         # update input values and retry
+            #         current_state = self.__aut_operator.getState()
+            #         self._update_input_values(state.getDOM(), current_state)
+
+            #     # TODO: input_value -> FormInputValueList
+            #     self._inputValueHandler.add(target_page_url, target_xpath, input_value)
+
+            #     final_submit = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
+
+            #     # TODO: if failed, update相關資訊(form可能有所改變)
+
+            #     # TODO: Fill in input values
+            #     if input_value is not None:
+            #         self._fill_input_value(app_element, input_value)
+                
+            #     # TODO: final_submit
+
+            while not is_legal_directive:
                 # Get current app element from crawler
                 app_element: AppElement = self.__aut_operator.getFocusedAppElement()
                 if app_element is None:
@@ -159,71 +183,46 @@ class LLMController:
                         self._remove_target_page()
                     break
 
-                # 從form_input_list找出符合app_element XPath的輸入值，跟LLM產出的結果做比較
-                for xpath, input_value in form_input_value_list.getInputValueItems():
-                    target_xpath = app_element.getXpath()
-                    input_value = form_input_value_list.getInputValueByXpath(target_xpath)
-                    if input_value is None:
-                        # TODO: update input values and retry
-                        pass
-                    self._input_value_pool.add(target_page_url, target_xpath, input_value)
-
-                final_submit = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
-
-                # TODO: if failed, update相關資訊(form可能有所改變)
-
-                # TODO: Fill in input values
-                if input_value is not None:
-                    self._fill_input_value(app_element, input_value)
-                
-
-                # TODO: final_submit
-
-            while not is_legal_directive:
-                app_element: AppElement = self.__aut_operator.getFocusedAppElement()
-                if app_element is None:
-                    if len(self.__aut_operator.getAllSelectedAppElements()) == 0:
-                        self._remove_target_page()
-                    break
-
-                final_submit = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
+                self._inputValueHandler.add(target_page_url, app_element.getXpath(), self.form_input_list)
+                final_submit: ExecuteActionOutput = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
 
                 if self._target_page_id not in self._form_counts:
                     self._form_counts[self._target_page_id] = 1
 
                 if final_submit.getIsDone():
-                    is_legal_directive = self._is_legal_directive()
-
-                if final_submit.getIsDone() and is_legal_directive:
-                    try:
-                        self._logger.info(f"Find legal directive, target page id: {self._target_page_id}")
+                    is_legal_directive: bool = self._is_legal_directive()
+                    if is_legal_directive:
+                        try:
+                            self._logger.info(f"Find legal directive, target page id: {self._target_page_id}")
+                            self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
+                            # directive_dto = self._create_fake_directive(self._target_page_id, self._episode_handler_id)
+                            # self.__target_page_port.push_target_page_by_directive(self._target_page_id, directive_dto)
+                            self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id)
+                            # self._fake_data = {}
+                        except Exception as ex:
+                            template = 'An exception of type {0} occurred. Arguments:\n{1!r}'
+                            message = template.format(type(ex).__name__, ex.args)
+                            self._logger.info(message)
+                            # self._fake_data = {}
+                            self._logger.info(f"PUSH ERROR!!! {self.__crawler.getUrl()}")
+                    else:
+                        # TODO: This is a temporary solution by AI, need to be checked by human
+                        self._form_counts[self._target_page_id] += 1
+                        # self._fake_data = {}
+                        # clean the state
+                        episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
+                        episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
+                        episode_handler.remain_only_index_zero_state()
+                        self._logger.info(f"Find illegal directive, target page id: {self._target_page_id}")
                         self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
-                        # directive_dto = self._create_fake_directive(self._target_page_id, self._episode_handler_id)
-                        # self.__target_page_port.push_target_page_by_directive(self._target_page_id, directive_dto)
-                        self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id)
-                        self._fake_data = {}
-                    except Exception as ex:
-                        template = 'An exception of type {0} occurred. Arguments:\n{1!r}'
-                        message = template.format(type(ex).__name__, ex.args)
-                        self._logger.info(message)
-                        self._fake_data = {}
-                        self._logger.info(f"PUSH ERROR!!! {self.__crawler.getUrl()}")
-                elif final_submit.getIsDone() and not is_legal_directive:
-                    # TODO: This is a temporary solution by AI, need to be checked by human
-                    self._form_counts[self._target_page_id] += 1
-                    self._fake_data = {}
-                    # clean the state
-                    episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
-                    episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
-                    episode_handler.remain_only_index_zero_state()
-                    self._logger.info(f"Find illegal directive, target page id: {self._target_page_id}")
-                    self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
-                    if self._form_counts[self._target_page_id] >= 10:
-                        self._form_counts[self._target_page_id] = 0
-                        directive_dto = self._create_directive(self._target_page_id, self._episode_handler_id)
-                        self._save_target_page_to_html_set(self._episode_handler_id, directive_dto)
-                        self._remove_target_page()
-                        break
+                        if self._form_counts[self._target_page_id] >= 10:
+                            self._form_counts[self._target_page_id] = 0
+                            directive_dto = self._create_directive(self._target_page_id, self._episode_handler_id)
+                            self._save_target_page_to_html_set(self._episode_handler_id, directive_dto)
+                            self._remove_target_page()
+                            break
+            end_time = time.time_ns()
+            print(f"Total time: {(end_time - begin_time) / 1000000}ms")
 
     def _check_is_password(self, app_element: AppElement):
         # check if the element is a password field use regex
@@ -297,25 +296,13 @@ class LLMController:
         episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
         episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
         states = episode_handler.getAllState()
-
-        preds = None
-        fake_preds = None
+        xpath = app_element.getXpath()
 
         # TODO: get input values
-        # if input_example is not None:
-        #     data_loader = PromptModelDirector().get_prompt_data_loader(self.prompt_model_builder, input_example)
-        #     fake_data_loader = PromptModelDirector().get_prompt_data_loader(self.fake_prompt_model_builder, input_example)
-
-        #     for step, batch in enumerate(data_loader):
-        #         if torch.cuda.is_available():
-        #             batch = batch.cuda()
-        #         logits = self.prompt_model(batch)
-        #         preds = torch.argmax(logits, dim=-1)
-        #     for step, batch in enumerate(fake_data_loader):
-        #         if torch.cuda.is_available():
-        #             batch = batch.cuda()
-        #         logits = self.fake_prompt_model(batch)
-        #         fake_preds = torch.argmax(logits, dim=-1)
+        form_input_value_list = self._inputValueHandler.get(target_url, xpath)
+        if form_input_value_list is None:
+            # TODO: update input values and retry
+            pass
 
         execute_action_use_case = ExecuteActionUseCase(self.__aut_operator)
         doc = etree.parse(StringIO(states[-1].getDOM()), etree.HTMLParser())
@@ -359,7 +346,7 @@ class LLMController:
             episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
             episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
             state: State = episode_handler.getAllState()[-2]
-            self._fake_data[state.getId()] = fake_preds
+            # self._fake_data[state.getId()] = fake_preds
         except Exception as exception:
             self._logger.exception(f"Something wrong when execute action: {exception}")
             traceback.print_exc()
@@ -409,9 +396,20 @@ class LLMController:
             self.__aut_controller.resetAUTServer(True)
             reset_env_use_case.execute(reset_env_use_input, reset_env_use_output)
 
-    def _get_form_elements(self, xpath) -> str:
-        state = self.__aut_operator.getState()
+    def _get_form_elements(self, xpath, state) -> str:
         page_dom_str = state.getDOM()
         page_dom = Dom(page_dom_str)
         target_dom = page_dom.getByXpath(xpath)
         return target_dom.tostring()
+
+    def _generate_input_values(self, form_xpath, state) -> list[FormInputValue]:
+        self.__target_form_xpath = form_xpath
+        # Get form elements
+        self._form_elements = self._get_form_elements(form_xpath, state)
+        # Get input values
+        return self.input_generator.get_input_value_list(self._form_elements)
+
+    def _update_input_values(self, origin_input_list, current_dom):
+        prompt = SystemPromptFactory.get("update_input_values").format()
+        # TODO: self._inputValueHandler.add(target_page_url, target_xpath, input_value)
+        pass
