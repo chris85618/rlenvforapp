@@ -183,7 +183,8 @@ class LLMController:
                         self._remove_target_page()
                     break
 
-                self._inputValueHandler.add(target_page_url, app_element.getXpath(), self.form_input_list)
+                state = self.__aut_operator.getState()
+                self._inputValueHandler.add(target_page_url, app_element.getXpath(), Dom(state.getDOM()))
                 final_submit: ExecuteActionOutput = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
 
                 if self._target_page_id not in self._form_counts:
