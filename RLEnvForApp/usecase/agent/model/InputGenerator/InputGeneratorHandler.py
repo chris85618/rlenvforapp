@@ -5,6 +5,7 @@ from RLEnvForApp.usecase.agent.model.InputGenerator.IInputValueParser import IIn
 from RLEnvForApp.usecase.agent.model.InputGenerator.JsonInputValueParser import JsonInputValueParser
 from RLEnvForApp.domain.llmService.SystemPromptFactory import SystemPromptFactory
 from RLEnvForApp.domain.llmService.LlmTemplateService import LlmTemplateService
+from RLEnvForApp.domain.environment.xpath.XPathFormatter import XPathFormatter
 
 
 class InputGeneratorHandler:
@@ -17,8 +18,8 @@ class InputGeneratorHandler:
         self.llm_service.set_system_prompt(SystemPromptFactory.get("get_input_values"), "dom")
         self.input_value_parser: IInputValueParser = JsonInputValueParser()
 
-    def get_response(self, dom):
-        response = self.llm_service.get_response(dom=dom)
+    def get_response(self, dom, form_xpath:str):
+        response = self.llm_service.get_response(dom=dom, form_xpath=form_xpath)
         result_list = response.split("```")
 
         if len(result_list) < 3:
@@ -37,11 +38,12 @@ class InputGeneratorHandler:
     def get_input_value_list(self, dom, form_xpath) -> list[FormInputValue]:
         # TODO: verify the result?
         result:list[FormInputValue] = []
-        input_value_list_str = self.get_response(dom)
+        input_value_list_str = self.get_response(dom, form_xpath=form_xpath)
         for input_value_dict in self.input_value_parser.parse(input_value_list_str):
             form_input_value_list = FormInputValue(page_dom=dom, form_xpath=form_xpath)
             for xpath, input_value in input_value_dict.items():
-                input_value = InputValue(xpath=xpath, value=input_value["input_value"], action=input_value["action_number"])
+                formatted_xpath = XPathFormatter.format(xpath)
+                input_value = InputValue(xpath=formatted_xpath, value=input_value["input_value"], action=input_value["action_number"])
                 form_input_value_list.append(input_value)
             result.append(form_input_value_list)
         return result

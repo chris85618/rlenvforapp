@@ -186,7 +186,7 @@ class LLMController:
 
                 state = self.__aut_operator.getState()
                 self._inputValueHandler.add(target_page_url, self.__target_form_xpath, Dom(state.getDOM()))
-                final_submit: ExecuteActionOutput = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
+                final_submit: ExecuteActionOutput = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl(), self.__target_form_xpath)
 
                 if self._target_page_id not in self._form_counts:
                     self._form_counts[self._target_page_id] = 1
@@ -282,7 +282,7 @@ class LLMController:
         use_case.execute(_input, _output)
         return _output.getEpisodeHandlerDTO()
 
-    def _execute_action(self, app_element: AppElement, target_url) -> ExecuteActionOutput:
+    def _execute_action(self, app_element: AppElement, target_url: str, form_xpath: str) -> ExecuteActionOutput:
         final_submit = False
         episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
         episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
@@ -290,7 +290,7 @@ class LLMController:
         xpath = app_element.getXpath()
 
         # TODO: get input values
-        form_input_value: FormInputValue = self._inputValueHandler.get(target_url, xpath)
+        form_input_value: FormInputValue = self._inputValueHandler.get(target_url, form_xpath, xpath)
         if form_input_value is None:
             # TODO: update input values and retry
             pass

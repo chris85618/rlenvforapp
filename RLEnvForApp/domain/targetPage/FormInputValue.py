@@ -1,4 +1,5 @@
 from RLEnvForApp.domain.targetPage.InputValue import InputValue
+from RLEnvForApp.domain.environment.xpath.XPathFormatter import XPathFormatter
 
 
 class FormInputValue:
@@ -8,13 +9,15 @@ class FormInputValue:
     def __init__(self, *input_value_list: list[InputValue], page_dom: str = "", form_xpath: str = ""):
         for input_value in input_value_list:
             xpath = input_value.getXpath()
-            self.input_value_dict[xpath] = input_value
+            formatted_xpath = XPathFormatter.format(xpath)
+            self.input_value_dict[formatted_xpath] = input_value
         self.page_dom = page_dom
         self.form_xpath = form_xpath
 
     def append(self, input_value: InputValue):
         xpath = input_value.getXpath()
-        self.input_value_dict[xpath] = input_value
+        formatted_xpath = XPathFormatter.format(xpath)
+        self.input_value_dict[formatted_xpath] = input_value
 
     def update(self, new_page_dom: str):
         self.page_dom = new_page_dom
@@ -28,7 +31,8 @@ class FormInputValue:
         return self.input_value_dict.values()[index]
     
     def getInputValueByXpath(self, xpath:str) -> InputValue:
-        return self.input_value_dict.get(xpath)
+        formatted_xpath = XPathFormatter.format(xpath)
+        return self.input_value_dict.get(formatted_xpath)
     
     def getInputValueDict(self) -> dict:
         return self.input_value_dict

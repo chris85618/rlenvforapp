@@ -11,17 +11,17 @@ class InputValueHandler:
         form_input_value_list: FormInputValueList = FormInputValueList(xpath, page_dom)
         self.input_value_pool.add(url, xpath, form_input_value_list)
 
-    def get(self, url:str, xpath:str) -> FormInputValue:
-        input_value_list: FormInputValueList = self.input_value_pool.get(url, xpath)
+    def get(self, url:str, form_xpath:str, field_xpath:str) -> FormInputValue:
+        input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath, field_xpath)
         if input_value_list.is_done():
             return None
         return input_value_list.get()
 
-    def get_and_next(self, url:str, xpath:str) -> FormInputValueList:
-        result: FormInputValueList = self.get(url, xpath)
+    def get_and_next(self, url:str, form_xpath:str, field_xpath:str) -> FormInputValue:
+        result: FormInputValueList = self.get(url, form_xpath, field_xpath)
         if result is not None:
             result.next()
         return result
 
-    def next(self, url:str, xpath:str):
-        self.get_and_next(url, xpath)
+    def next(self, url:str, form_xpath:str, field_xpath:str):
+        self.get_and_next(url, form_xpath, field_xpath)
