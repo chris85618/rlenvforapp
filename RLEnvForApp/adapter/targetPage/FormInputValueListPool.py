@@ -1,4 +1,5 @@
 from RLEnvForApp.adapter.targetPage.FormInputValueList import FormInputValueList
+from RLEnvForApp.domain.environment.xpath.XPathFormatter import XPathFormatter
 
 
 class FormInputValueListPool:
@@ -11,4 +12,4 @@ class FormInputValueListPool:
         return self.pool.get(self._getIndex(url, xpath))
 
     def _getIndex(self, url:str, xpath:str) -> tuple:
-        return tuple([url, xpath])
+        return tuple([url, XPathFormatter.format(xpath)])

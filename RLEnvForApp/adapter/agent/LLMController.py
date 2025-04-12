@@ -8,7 +8,6 @@ from urllib.parse import urlparse
 
 from dependency_injector.wiring import Provide, inject
 from lxml import etree
-from openprompt.data_utils import InputExample
 
 from RLEnvForApp.adapter.controller.ApplicationUnderTestController import ApplicationUnderTestController
 from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.CodeCoverageCollectorFactory import CodeCoverageCollectorFactory
@@ -27,10 +26,12 @@ from RLEnvForApp.domain.llmService.ILlmService import ILlmService
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.FormSubmitCriteriaSingleton import FormSubmitCriteriaSingleton
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.IDirectiveRuleService import IDirectiveRuleService
 from RLEnvForApp.domain.targetPage.Dom import Dom
+from RLEnvForApp.domain.targetPage.InputValue import InputValue
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
 from RLEnvForApp.adapter.targetPage.InputValueHandler import InputValueHandler
+from RLEnvForApp.adapter.targetPage.FormInputValueList import FormInputValueList
 
 from RLEnvForApp.usecase.environment.autOperator.AIGUIDEOperator import AIGUIDEOperator
 from RLEnvForApp.usecase.environment.autOperator.codeCoverageCollector.ICodeCoverageCollector import \
@@ -184,7 +185,7 @@ class LLMController:
                     break
 
                 state = self.__aut_operator.getState()
-                self._inputValueHandler.add(target_page_url, app_element.getXpath(), Dom(state.getDOM()))
+                self._inputValueHandler.add(target_page_url, self.__target_form_xpath, Dom(state.getDOM()))
                 final_submit: ExecuteActionOutput = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
 
                 if self._target_page_id not in self._form_counts:
@@ -281,29 +282,20 @@ class LLMController:
         use_case.execute(_input, _output)
         return _output.getEpisodeHandlerDTO()
 
-    def _get_input_example(self, app_element: AppElement):
-        if app_element.getPlaceholder() != "":
-            return InputExample(guid=0, text_a=app_element.getPlaceholder(), label=0)
-        elif app_element.getLabel() != "":
-            return InputExample(guid=0, text_a=app_element.getLabel(), label=0)
-        elif app_element.getName() != "":
-            return InputExample(guid=0, text_a=app_element.getName(), label=0)
-        else:
-            return None
-
     def _execute_action(self, app_element: AppElement, target_url) -> ExecuteActionOutput:
         final_submit = False
-        input_example = self._get_input_example(app_element)
         episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
         episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
         states = episode_handler.getAllState()
         xpath = app_element.getXpath()
 
         # TODO: get input values
-        form_input_value_list = self._inputValueHandler.get(target_url, xpath)
-        if form_input_value_list is None:
+        form_input_value: FormInputValue = self._inputValueHandler.get(target_url, xpath)
+        if form_input_value is None:
             # TODO: update input values and retry
             pass
+
+        input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
 
         execute_action_use_case = ExecuteActionUseCase(self.__aut_operator)
         doc = etree.parse(StringIO(states[-1].getDOM()), etree.HTMLParser())
@@ -322,25 +314,17 @@ class LLMController:
 
         execute_action_output = ExecuteActionOutput()
 
-        # TODO: 不要用規則判斷，用LLM
         if is_submit_button:
             action_number = 0
             final_submit = True
-        elif not is_submit_button and app_element.getTagName() == "button":
-            action_number = -1
-        elif preds is not None and fake_preds is not None:
-            # TODO: 把password餵進LLM RAG
-            # TODO: 考量資安
-            if self._check_is_password(app_element):
-                action_number = 25
-            else:
-                action_number = preds + 1
+        elif self._check_is_password(app_element):
+            # TODO: password
+            action_number = 25
         else:
-            execute_action_output.setIsDone(True)
-            return execute_action_output
+            action_number = input_value.getAction()
 
         execute_action_input = ExecuteActionInput(action_number, self._episode_handler_id, self.__server_name, target_url,
-                                                  app_element.getXpath())
+                                                  app_element.getXpath(), value=input_value.getValue())
 
         try:
             execute_action_use_case.execute(input=execute_action_input, output=execute_action_output)
@@ -408,7 +392,7 @@ class LLMController:
         # Get form elements
         self._form_elements = self._get_form_elements(form_xpath, state)
         # Get input values
-        return self.input_generator.get_input_value_list(self._form_elements)
+        return self.input_generator.get_input_value_list(dom=self._form_elements, form_xpath=form_xpath)
 
     def _update_input_values(self, origin_input_list, current_dom):
         prompt = SystemPromptFactory.get("update_input_values").format()

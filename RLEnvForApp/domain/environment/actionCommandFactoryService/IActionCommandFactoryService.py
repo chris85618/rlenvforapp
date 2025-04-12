@@ -5,7 +5,7 @@ class IActionCommandFactoryService:
     def __init__(self):
         pass
 
-    def createActionCommand(self, actionNumber: int) -> IActionCommand:
+    def createActionCommand(self, actionNumber: int, input_value=None) -> IActionCommand:
         pass
 
     def getActionSpaceSize(self) -> int:

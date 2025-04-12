@@ -45,7 +45,7 @@ class ExecuteActionUseCase:
             self._actionCommandFactory.setXpath(input.getXpath())
 
         actionCommand: IActionCommand = self._actionCommandFactory.createActionCommand(
-            actionNumber=input.getActionNumber())
+            actionNumber=input.getActionNumber(), input_value=input.getValue())
         actionCommand.execute(operator=self._autOperator)
 
         if input.getActionNumber() == 0:
