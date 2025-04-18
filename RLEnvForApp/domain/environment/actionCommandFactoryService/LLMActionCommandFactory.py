@@ -13,6 +13,7 @@ from RLEnvForApp.domain.environment.actionCommandFactoryService.IActionCommandFa
     IActionCommandFactoryService
 from RLEnvForApp.domain.environment.inputSpace import ValueWeightSingleton
 from RLEnvForApp.logger.logger import Logger
+from RLEnvForApp.adapter.agent.model.builder.PromptModelDirector import PromptModelDirector
 
 
 class LLMActionCommandFactory(IActionCommandFactoryService):
@@ -22,7 +23,7 @@ class LLMActionCommandFactory(IActionCommandFactoryService):
         self.__url = ''
         self.__xpath = ''
         self.__input_data = inputSpace.inputValues
-        # TODO: self.__input_type = PromptModelDirector.classes
+        self.__input_type = PromptModelDirector.classes
         self.__fake_data_map = {
             "first name": "firstname",
             "last name": "lastname",
@@ -54,7 +55,7 @@ class LLMActionCommandFactory(IActionCommandFactoryService):
 
 
 
-    def createActionCommand(self, actionNumber: int ) -> IActionCommand:
+    def createActionCommand(self, actionNumber: int, input_value=None	 ) -> IActionCommand:
         if actionNumber != 0 and actionNumber != -1:
             input_value: str = self._get_input_value(actionNumber)
             Logger().info(f"Input value: {input_value}")

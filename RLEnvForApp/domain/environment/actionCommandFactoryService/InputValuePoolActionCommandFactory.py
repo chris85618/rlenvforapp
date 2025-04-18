@@ -13,6 +13,7 @@ from RLEnvForApp.domain.environment.actionCommandFactoryService.IActionCommandFa
     IActionCommandFactoryService
 from RLEnvForApp.domain.environment.inputSpace import ValueWeightSingleton
 from RLEnvForApp.logger.logger import Logger
+from RLEnvForApp.adapter.agent.model.builder.PromptModelDirector import PromptModelDirector
 
 
 class InputValuePoolActionCommandFactory(IActionCommandFactoryService):
@@ -22,7 +23,7 @@ class InputValuePoolActionCommandFactory(IActionCommandFactoryService):
         self.__url = ''
         self.__xpath = ''
         self.__input_data = inputSpace.inputValues
-        # TODO: self.__input_type = PromptModelDirector.classes
+        self.__input_type = PromptModelDirector.classes
 
     def createActionCommand(self, actionNumber: int, input_value=None) -> IActionCommand:
         if actionNumber != 0 and actionNumber != -1:

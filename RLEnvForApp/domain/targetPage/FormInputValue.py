@@ -19,9 +19,13 @@ class FormInputValue:
         formatted_xpath = XPathFormatter.format(xpath)
         self.input_value_dict[formatted_xpath] = input_value
 
-    def update(self, new_page_dom: str):
+    def update(self, new_page_dom: str, form_input_value_dict: dict[str, InputValue]):
+        # Update the page DOM if it has changed
         self.page_dom = new_page_dom
-        # TODO: Additional update logic can be added here
+        # Update the input value dictionary with new values
+        for xpath, input_value in form_input_value_dict.items():
+            formatted_xpath = XPathFormatter.format(xpath)
+            self.input_value_dict[formatted_xpath] = input_value
         
 
     def getInputValueList(self) -> list[InputValue]:
@@ -39,3 +43,11 @@ class FormInputValue:
     
     def getInputValueItems(self) -> dict:
         return self.input_value_dict.items()
+    
+    def toString(self) -> str:
+        result = ""
+        for xpath, input_value in self.input_value_dict.items():
+            value = input_value.getValue()
+            action = input_value.getAction()
+            result += f"xpath: {xpath}, input_value: {value}, action_number: {action}\n"
+        return result

@@ -23,7 +23,7 @@ class MorePagesExperimentActionCommandFactory(IActionCommandFactoryService):
         self._inputData = [inputData_2, inputData_3,
                            inputData_4, inputData_5, inputData_6, inputData_7]
 
-    def createActionCommand(self, actionNumber: int) -> IActionCommand:
+    def createActionCommand(self, actionNumber: int, input_value=None) -> IActionCommand:
         inputActionStartNumber = 2
 
         if actionNumber == 0:

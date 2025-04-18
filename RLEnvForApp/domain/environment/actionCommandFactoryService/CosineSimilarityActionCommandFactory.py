@@ -23,7 +23,7 @@ class CosineSimilarityActionCommandFactory(IActionCommandFactoryService):
         else:
             self._inputValueWeights = ValueWeightSingleton.getInstance().getValueWeights()
 
-    def createActionCommand(self, actionNumber: int) -> IActionCommand:
+    def createActionCommand(self, actionNumber: int, input_value=None) -> IActionCommand:
         if actionNumber == 0:
             return IRobotClickCommand.IRobotClickCommand(actionNumber=actionNumber)
         else:

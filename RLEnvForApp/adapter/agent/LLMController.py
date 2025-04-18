@@ -30,6 +30,7 @@ from RLEnvForApp.domain.targetPage.InputValue import InputValue
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
+from RLEnvForApp.usecase.agent.model.InputGenerator.InputUpdaterHandler import InputUpdaterHandler
 from RLEnvForApp.adapter.targetPage.InputValueHandler import InputValueHandler
 from RLEnvForApp.adapter.targetPage.FormInputValueList import FormInputValueList
 
@@ -289,13 +290,10 @@ class LLMController:
         states = episode_handler.getAllState()
         xpath = app_element.getXpath()
 
-        # TODO: get input values
-        form_input_value: FormInputValue = self._inputValueHandler.get(target_url, form_xpath, xpath)
+        # get input values
+        form_input_value: FormInputValue = self._inputValueHandler.get(target_url, form_xpath)
         if form_input_value is None:
-            # TODO: update input values and retry
-            pass
-
-        input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+            raise ValueError("Form input value is None.")
 
         execute_action_use_case = ExecuteActionUseCase(self.__aut_operator)
         doc = etree.parse(StringIO(states[-1].getDOM()), etree.HTMLParser())
@@ -306,7 +304,7 @@ class LLMController:
 
         prompt = SystemPromptFactory.get("is_submit_button").format(form_info=str1)
         is_submit_button_str = self._llm_service.get_response(prompt).lower()
-        if is_submit_button_str == "yes":
+        if "yes" in is_submit_button_str:
             is_submit_button = True
 
         # if app_element.getTagName() == "button" or app_element.getTagName() == "a" or (app_element.getTagName() == 'input' and (app_element.getType() == 'submit' or app_element.getType() == "button" or app_element.getType() == 'image')):
@@ -317,10 +315,34 @@ class LLMController:
         if is_submit_button:
             action_number = 0
             final_submit = True
+            input_value = InputValue("", "")
         elif self._check_is_password(app_element):
-            # TODO: password
             action_number = 25
+            # TODO: password
+            repeat_counter = 0
+            input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+            while input_value is None:
+                # Update input values
+                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Groq()).get_input_value_list(dom=states[-1].getDOM(), input_values=origin_input_values.toString(), form_xpath=form_xpath)
+                for form_input_value in new_input_value_list:
+                    form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
+                input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+                repeat_counter += 1
+                if repeat_counter >= 3:
+                    raise ValueError("Form input value is None for 3 times.")
+            action_number = input_value.getAction()
         else:
+            repeat_counter = 0
+            input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+            while input_value is None:
+                # Update input values
+                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Groq()).get_input_value_list(dom=states[-1].getDOM(), origin_input_values=form_input_value.toString(), form_xpath=form_xpath)
+                for form_input_value in new_input_value_list:
+                    form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
+                input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+                repeat_counter += 1
+                if repeat_counter >= 3:
+                    raise ValueError("Form input value is None for 3 times.")
             action_number = input_value.getAction()
 
         execute_action_input = ExecuteActionInput(action_number, self._episode_handler_id, self.__server_name, target_url,
@@ -339,6 +361,7 @@ class LLMController:
         finally:
             if final_submit:
                 execute_action_output.setIsDone(True)
+                self._inputValueHandler.next(target_url, form_xpath)
         return execute_action_output
 
     def _is_legal_directive(self):

@@ -19,7 +19,7 @@ class DefaultForTestActionCommandFactoryService(IActionCommandFactoryService.IAc
                            "sgfsdg", "0984000000", "Michael Chen"]
         self._inputActionStartNumber = 2
 
-    def createActionCommand(self, actionNumber: int) -> IActionCommand:
+    def createActionCommand(self, actionNumber: int, input_value=None) -> IActionCommand:
 
         if actionNumber == 0:
             return ClickCommand.ClickCommand(actionNumber=actionNumber)
