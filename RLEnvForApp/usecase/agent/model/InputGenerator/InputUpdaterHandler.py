@@ -18,8 +18,8 @@ class InputUpdaterHandler:
         self.llm_service.set_system_prompt(SystemPromptFactory.get("update_input_values"), "dom", "input_values", "form_xpath")
         self.input_value_parser: IInputValueParser = JsonInputValueParser()
 
-    def get_response(self, dom, form_xpath:str):
-        response = self.llm_service.get_response(dom=dom, form_xpath=form_xpath)
+    def get_response(self, dom:str, input_values:str, form_xpath:str):
+        response = self.llm_service.get_response(dom=dom, input_values=input_values, form_xpath=form_xpath)
         result_list = response.split("```")
 
         if len(result_list) < 3:
@@ -35,10 +35,10 @@ class InputUpdaterHandler:
         # TODO: 改成retry
         raise
 
-    def get_input_value_list(self, dom, origin_input_values, form_xpath) -> list[FormInputValue]:
+    def get_input_value_list(self, dom, input_values, form_xpath) -> list[FormInputValue]:
         # TODO: verify the result?
         result:list[FormInputValue] = []
-        input_value_list_str = self.get_response(dom, input_values=origin_input_values, form_xpath=form_xpath)
+        input_value_list_str = self.get_response(dom=dom, input_values=input_values, form_xpath=form_xpath)
         for input_value_dict in self.input_value_parser.parse(input_value_list_str):
             form_input_value_list = FormInputValue(page_dom=dom, form_xpath=form_xpath)
             for xpath, input_value in input_value_dict.items():

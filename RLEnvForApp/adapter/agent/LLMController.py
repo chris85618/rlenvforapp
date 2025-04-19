@@ -323,7 +323,7 @@ class LLMController:
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
             while input_value is None:
                 # Update input values
-                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Groq()).get_input_value_list(dom=states[-1].getDOM(), input_values=origin_input_values.toString(), form_xpath=form_xpath)
+                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Groq()).get_input_value_list(dom=states[-1].getDOM(), input_values=input_values.toString(), form_xpath=form_xpath)
                 for form_input_value in new_input_value_list:
                     form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
                 input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
@@ -336,7 +336,7 @@ class LLMController:
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
             while input_value is None:
                 # Update input values
-                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Groq()).get_input_value_list(dom=states[-1].getDOM(), origin_input_values=form_input_value.toString(), form_xpath=form_xpath)
+                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Groq()).get_input_value_list(dom=states[-1].getDOM(), input_values=form_input_value.toString(), form_xpath=form_xpath)
                 for form_input_value in new_input_value_list:
                     form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
                 input_value: InputValue = form_input_value.getInputValueByXpath(xpath)

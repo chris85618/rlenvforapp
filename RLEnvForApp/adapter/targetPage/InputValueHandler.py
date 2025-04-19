@@ -21,13 +21,14 @@ class InputValueHandler:
         return input_value_list.get()
 
     def get_and_next(self, url:str, form_xpath:str) -> FormInputValue:
+        result = None
         form_input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
         if form_input_value_list is not None:
             if form_input_value_list.is_done() == False:
-                form_input_value_list.next()
+                result = form_input_value_list.get()
             if form_input_value_list.is_done() == False:
-                return form_input_value_list.get()
-        return None
+                form_input_value_list.next()
+        return result
 
     def next(self, url:str, form_xpath:str):
         self.get_and_next(url, form_xpath)

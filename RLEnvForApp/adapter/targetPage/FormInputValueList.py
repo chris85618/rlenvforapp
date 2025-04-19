@@ -28,7 +28,7 @@ class FormInputValueList:
         self.index += 1
     
     def is_done(self) -> bool:
-        return self.index > len(self.form_input_value_list)
+        return self.index >= len(self.form_input_value_list)
 
     def _generate_input_values(self, form_xpath: str, page_dom: Dom) -> list[FormInputValue]:
         # Get form elements
