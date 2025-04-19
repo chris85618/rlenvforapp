@@ -293,7 +293,10 @@ class LLMController:
         # get input values
         form_input_value: FormInputValue = self._inputValueHandler.get(target_url, form_xpath)
         if form_input_value is None:
-            raise ValueError("Form input value is None.")
+            # FInish testing this form
+            execute_action_output = ExecuteActionOutput()
+            execute_action_output.setIsDone(True)
+            return execute_action_output
 
         execute_action_use_case = ExecuteActionUseCase(self.__aut_operator)
         doc = etree.parse(StringIO(states[-1].getDOM()), etree.HTMLParser())

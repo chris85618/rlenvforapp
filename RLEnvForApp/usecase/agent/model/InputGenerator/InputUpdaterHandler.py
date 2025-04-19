@@ -40,11 +40,9 @@ class InputUpdaterHandler:
         result:list[FormInputValue] = []
         input_value_list_str = self.get_response(dom=dom, input_values=input_values, form_xpath=form_xpath)
         for input_value_dict in self.input_value_parser.parse(input_value_list_str):
-            form_input_value_list = FormInputValue(page_dom=dom, form_xpath=form_xpath)
-            for xpath, input_value in input_value_dict.items():
-                formatted_xpath = XPathFormatter.format(xpath)
-                input_value = InputValue(xpath=formatted_xpath, value=input_value["input_value"], action=input_value["action_number"])
-                form_input_value_list.append(input_value)
+            formatted_xpath = XPathFormatter.format(input_value_dict["xpath"])
+            input_value = InputValue(xpath=formatted_xpath, value=input_value_dict["input_value"], action=input_value_dict["action_number"])
+            form_input_value_list = FormInputValue(input_value, page_dom=dom, form_xpath=form_xpath)
             result.append(form_input_value_list)
             return result
         raise

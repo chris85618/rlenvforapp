@@ -34,7 +34,7 @@ class SystemPromptFactory:
                    "針對以下因AJAX而被更新的表單中的每個欄位內容，更新現有的測試組合。\n" + \
                    "這是表單的XPATH路徑: {form_xpath}\n" + \
                    "這是現有的測試組合: {input_values}\n" + \
-                   "產生的測試組合中，有各欄位的input_value、及各欄位的action_number，key是各欄位的xpath絕對路徑，要能有效填入表單。最外層使用Array列舉此測試組合。\n" + \
+                   "產生的測試組合中，有各欄位的input_value、各欄位的action_number、及各欄位的xpath(絕對路徑)，要能有效填入表單。最外層使用Array列舉此測試組合。\n" + \
                    """結果用json格式呈現，並用```json
 ```框起來。\n""" + \
                    "讓我們一步步思考:\n" +  \
