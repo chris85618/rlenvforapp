@@ -319,21 +319,21 @@ class LLMController:
             action_number = 0
             final_submit = True
             input_value = InputValue("", "")
-        elif self._check_is_password(app_element):
-            action_number = 25
-            # TODO: password
-            repeat_counter = 0
-            input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
-            while input_value is None:
-                # Update input values
-                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_input_value_list(dom=states[-1].getDOM(), input_values=input_values.toString(), form_xpath=form_xpath)
-                for form_input_value in new_input_value_list:
-                    form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
-                input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
-                repeat_counter += 1
-                if repeat_counter >= 3:
-                    raise ValueError("Form input value is None for 3 times.")
-            action_number = input_value.getAction()
+        # elif self._check_is_password(app_element):
+        #     action_number = 25
+        #     # TODO: password
+        #     repeat_counter = 0
+        #     input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+        #     while input_value is None:
+        #         # Update input values
+        #         new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_input_value_list(dom=states[-1].getDOM(), input_values=input_values.toString(), form_xpath=form_xpath)
+        #         for form_input_value in new_input_value_list:
+        #             form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
+        #         input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+        #         repeat_counter += 1
+        #         if repeat_counter >= 3:
+        #             raise ValueError("Form input value is None for 3 times.")
+        #     action_number = input_value.getAction()
         else:
             repeat_counter = 0
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)

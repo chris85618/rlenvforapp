@@ -17,7 +17,7 @@ class SystemPromptFactory:
                    "Please only say yes or no."
         elif selector == "get_input_values":
             return "這是action_number對欄位名稱的對照表\n" + \
-                   "-1: button, 0: first name, 1: last name, 2: email, 3: gender, 4: string, 5: user name, 6: full name, 7: postal code, 8: store name, 9: phone number, 10: street address, 11: city, 12: state, 13: province, 14: region, 15: number, 16: country, 17: display name, 18: address, 19: suburb, 20: company name, 21: card number, 22: expiration date, 23: CVV, 24: date, 25: password\n" + \
+                   "-1: changeFocus, 0: click, 1: input\n" + \
                    "針對以下表單的每個欄位內容、各自列舉出可能的回答的特性，數量愈少愈好且不要重複。\n" + \
                    "這是表單的XPATH路徑: {form_xpath}\n" + \
                    "根據特性來切分input space partition。\n" + \
@@ -30,8 +30,8 @@ class SystemPromptFactory:
         elif selector == "update_input_values":
             # TODO: 根據特性來產生新的輸入值
             return "這是action_number對欄位名稱的對照表\n" + \
-                   "-1: button, 0: first name, 1: last name, 2: email, 3: gender, 4: string, 5: user name, 6: full name, 7: postal code, 8: store name, 9: phone number, 10: street address, 11: city, 12: state, 13: province, 14: region, 15: number, 16: country, 17: display name, 18: address, 19: suburb, 20: company name, 21: card number, 22: expiration date, 23: CVV, 24: date, 25: password\n" + \
-                   "針對以下因AJAX而被更新的表單中的每個欄位內容，更新現有的測試組合。\n" + \
+                   "-1: changeFocus, 0: click, 1: input\n" + \
+                   "針對以下因AJAX而被更新的表單中的每個欄位內容，更新舊的測試組合，確保覆蓋所有新的表單欄位。\n" + \
                    "這是表單的XPATH路徑: {form_xpath}\n" + \
                    "這是現有的測試組合: {input_values}\n" + \
                    "產生的測試組合中，有各欄位的input_value、各欄位的action_number、及各欄位的xpath(絕對路徑)，要能有效填入表單。最外層使用Array列舉此測試組合。\n" + \
