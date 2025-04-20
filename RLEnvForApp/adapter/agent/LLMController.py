@@ -14,7 +14,7 @@ from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.CodeCover
 from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.NoCodeCoverageCollector import \
     NoCodeCoverageCollector
 from RLEnvForApp.adapter.environment.autOperator.crawler.SeleniumCrawler import SeleniumCrawler
-from RLEnvForApp.adapter.llmService.groq import Groq
+from RLEnvForApp.adapter.llmService.Gemini import Gemini
 from RLEnvForApp.adapter.targetPagePort.FileManager import FileManager
 from RLEnvForApp.adapter.targetPagePort.factory.TargetPagePortFactory import TargetPagePortFactory
 from RLEnvForApp.domain.environment.actionCommand.InitiateToTargetActionCommand import NosuchElementException
@@ -116,7 +116,7 @@ class LLMController:
         self._episodeIndex = 0
         self.__aut_controller.startAUTServer()
 
-        self.input_generator = InputGeneratorHandler(llm_service=Groq())
+        self.input_generator = InputGeneratorHandler(llm_service=Gemini())
         # TODO
         # self.prompt_model_builder = PromptModelBuilder()
         # self.fake_prompt_model_builder = PromptModelBuilder()
@@ -326,7 +326,7 @@ class LLMController:
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
             while input_value is None:
                 # Update input values
-                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Groq()).get_input_value_list(dom=states[-1].getDOM(), input_values=input_values.toString(), form_xpath=form_xpath)
+                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_input_value_list(dom=states[-1].getDOM(), input_values=input_values.toString(), form_xpath=form_xpath)
                 for form_input_value in new_input_value_list:
                     form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
                 input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
@@ -339,7 +339,7 @@ class LLMController:
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
             while input_value is None:
                 # Update input values
-                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Groq()).get_input_value_list(dom=states[-1].getDOM(), input_values=form_input_value.toString(), form_xpath=form_xpath)
+                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_input_value_list(dom=states[-1].getDOM(), input_values=form_input_value.toString(), form_xpath=form_xpath)
                 for form_input_value in new_input_value_list:
                     form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
                 input_value: InputValue = form_input_value.getInputValueByXpath(xpath)

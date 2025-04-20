@@ -3,7 +3,7 @@ from dependency_injector.wiring import Provide
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.domain.targetPage.Dom import Dom
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
-from RLEnvForApp.adapter.llmService.groq import Groq
+from RLEnvForApp.adapter.llmService.Gemini import Gemini
 
 
 class FormInputValueList:
@@ -14,7 +14,7 @@ class FormInputValueList:
 
     def __init__(self, form_xpath, page_dom):
         # self.input_generator = Provide[EnvironmentDIContainers.llmService]
-        self.input_generator = InputGeneratorHandler(llm_service=Groq())
+        self.input_generator = InputGeneratorHandler(llm_service=Gemini())
         self.form_input_value_list = self._generate_input_values(form_xpath, page_dom)
         self.index = 0
         # self.page_dom = page_dom
