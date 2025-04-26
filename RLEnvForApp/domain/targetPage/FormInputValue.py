@@ -1,5 +1,6 @@
 from RLEnvForApp.domain.targetPage.InputValue import InputValue
 from RLEnvForApp.domain.environment.xpath.XPathFormatter import XPathFormatter
+from RLEnvForApp.domain.llmService.FormOutputResponse import FormOutputResponse
 
 
 class FormInputValue:
@@ -13,6 +14,14 @@ class FormInputValue:
             self.input_value_dict[formatted_xpath] = input_value
         self.page_dom = page_dom
         self.form_xpath = form_xpath
+    
+    @classmethod
+    def fromFormOutputResponse(cls, form_output_response: FormOutputResponse, page_dom: str = "", form_xpath: str = ""):
+        result = cls(page_dom=page_dom, form_xpath=form_xpath)
+        for test_field_output_response in form_output_response.test_combination_list:
+            input_value = InputValue.fromTestFieldOutputResponse(test_field_output_response)
+            result.append(input_value)
+        return result
 
     def append(self, input_value: InputValue):
         xpath = input_value.getXpath()

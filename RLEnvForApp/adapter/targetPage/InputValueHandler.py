@@ -1,18 +1,27 @@
 from RLEnvForApp.adapter.targetPage.FormInputValueListPool import FormInputValueListPool
-from RLEnvForApp.adapter.targetPage.FormInputValueList import FormInputValueList
+from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.domain.targetPage.Dom import Dom
+from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
+from RLEnvForApp.usecase.agent.model.InputGenerator.LlmTestCombinationToFormInputValueListConverter import LlmTestCombinationToFormInputValueListConverter
 
 
 class InputValueHandler:
     input_value_pool = FormInputValueListPool()
 
-    def add(self, url:str, xpath:str, page_dom:Dom):
-        if self.input_value_pool.get(url, xpath) is not None:
+    def add(self, url:str, form_xpath:str, page_dom:Dom):
+        if self.input_value_pool.get(url, form_xpath) is not None:
             # Add if and only if necessary
             return
-        form_input_value_list: FormInputValueList = FormInputValueList(xpath, page_dom)
-        self.input_value_pool.add(url, xpath, form_input_value_list)
+
+        # Get form elements
+        form_elements = page_dom.getByXpath(form_xpath).tostring()
+        # Get input values
+        input_values = InputGeneratorHandler().get_input_value_list(form_elements, form_xpath=form_xpath)
+        form_input_value_list = LlmTestCombinationToFormInputValueListConverter().convert(input_values)
+
+        form_input_value_list: FormInputValueList = FormInputValueList(form_input_value_list)
+        self.input_value_pool.add(url, form_xpath, form_input_value_list)
 
     def get(self, url:str, form_xpath:str) -> FormInputValue:
         input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)

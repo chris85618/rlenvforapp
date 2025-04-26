@@ -31,8 +31,8 @@ from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputUpdaterHandler import InputUpdaterHandler
+from RLEnvForApp.usecase.agent.model.InputGenerator.LlmTestCombinationToFormInputValueListConverter import LlmTestCombinationToFormInputValueListConverter
 from RLEnvForApp.adapter.targetPage.InputValueHandler import InputValueHandler
-from RLEnvForApp.adapter.targetPage.FormInputValueList import FormInputValueList
 
 from RLEnvForApp.usecase.environment.autOperator.AIGUIDEOperator import AIGUIDEOperator
 from RLEnvForApp.usecase.environment.autOperator.codeCoverageCollector.ICodeCoverageCollector import \
@@ -71,12 +71,11 @@ class LLMController:
                  directive_rule_service: IDirectiveRuleService =
                  Provide[EnvironmentDIContainers.directiveRuleService],
                  repository: TargetPageRepository = Provide[EnvironmentDIContainers.targetPageRepository],
-                 llm_service: ILlmService = Provide[EnvironmentDIContainers.llmService],
-                 input_value_handler: InputValueHandler = Provide[EnvironmentDIContainers.inputValueHandler]):
+                 llm_service: ILlmService = Provide[EnvironmentDIContainers.llmService]):
         self._llm_service = llm_service
         llm_service_instance.set_llm(llm_service)
 
-        self._inputValueHandler = input_value_handler
+        self._inputValueHandler = InputValueHandler()
 
         self._fake_data = {}
         self._episode_handler_id = None
@@ -116,7 +115,7 @@ class LLMController:
         self._episodeIndex = 0
         self.__aut_controller.startAUTServer()
 
-        self.input_generator = InputGeneratorHandler(llm_service=Gemini())
+        self.input_generator = InputGeneratorHandler()
         # TODO
         # self.prompt_model_builder = PromptModelBuilder()
         # self.fake_prompt_model_builder = PromptModelBuilder()
@@ -339,7 +338,7 @@ class LLMController:
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
             while input_value is None:
                 # Update input values
-                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_input_value_list(dom=states[-1].getDOM(), input_values=form_input_value.toString(), form_xpath=form_xpath)
+                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_input_value_list(dom=states[-1].getDOM(), input_values=form_input_value.toString(), form_xpath=form_xpath, lacked_field_xpath=xpath)
                 for form_input_value in new_input_value_list:
                     form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
                 input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
@@ -418,9 +417,5 @@ class LLMController:
         # Get form elements
         self._form_elements = self._get_form_elements(form_xpath, state)
         # Get input values
-        return self.input_generator.get_input_value_list(dom=self._form_elements, form_xpath=form_xpath)
-
-    def _update_input_values(self, origin_input_list, current_dom):
-        prompt = SystemPromptFactory.get("update_input_values").format()
-        # TODO: self._inputValueHandler.add(target_page_url, target_xpath, input_value)
-        pass
+        input_values = self.input_generator.get_input_value_list(dom=self._form_elements, form_xpath=form_xpath)
+        return LlmTestCombinationToFormInputValueListConverter().convert(input_values)

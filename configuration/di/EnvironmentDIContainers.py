@@ -8,8 +8,6 @@ from RLEnvForApp.domain.environment.observationService import *
 from RLEnvForApp.domain.environment.episodeHandler import *
 from RLEnvForApp.domain.targetPage.DirectiveRuleService import *
 from RLEnvForApp.usecase.targetPage.queueManager import *
-from RLEnvForApp.adapter.targetPage.FormInputValueListPool import *
-from RLEnvForApp.adapter.targetPage.InputValueHandler import *
 from RLEnvForApp.adapter.llmService import *
 from RLEnvForApp.adapter.repository.targetPage import *
 from RLEnvForApp.adapter.repository.episodeHandler import *
@@ -31,10 +29,6 @@ class EnvironmentDIContainers(containers.DeclarativeContainer):
 
     applicationUnderTestRepository = providers.Singleton(
         DIConfiguration.get_class_name(config.Environment.application_under_test_repository())
-    )
-
-    inputValueHandler = providers.Singleton(
-        DIConfiguration.get_class_name(config.Environment.input_value_handler())
     )
 
     # service

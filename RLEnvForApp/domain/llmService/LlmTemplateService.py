@@ -27,3 +27,9 @@ class LlmTemplateService(ILlmService):
             system_prompt = self.system_prompt
         prompt = system_prompt.format(**kwargs)
         return self.llm.get_response(prompt)
+
+    def get_structured_response(self, system_prompt: str=None, **kwargs):
+        if system_prompt is None:
+            system_prompt = self.system_prompt
+        prompt = system_prompt.format(**kwargs)
+        return self.llm.get_structured_response(prompt)

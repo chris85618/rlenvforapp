@@ -15,11 +15,13 @@ class InputUpdaterHandler:
         self.llm_service = LlmTemplateService()
         self.llm_service.set_llm(llm_service)
         # TODO: https://github.com/meta-llama/llama/issues/484
-        self.llm_service.set_system_prompt(SystemPromptFactory.get("update_input_values"), "dom", "input_values", "form_xpath")
+        self.llm_service.set_system_prompt(SystemPromptFactory.get("update_input_values"), "dom", "input_values", "form_xpath", "lacked_field_xpath")
         self.input_value_parser: IInputValueParser = JsonInputValueParser()
 
-    def get_response(self, dom:str, input_values:str, form_xpath:str):
-        response = self.llm_service.get_response(dom=dom, input_values=input_values, form_xpath=form_xpath)
+    def get_response(self, dom:str, input_values:str, form_xpath:str, lacked_field_xpath:str) -> str:
+        formatted_form_xpath = XPathFormatter.format(form_xpath)
+        formatted_lacked_field_xpath = XPathFormatter.format(lacked_field_xpath)
+        response = self.llm_service.get_response(dom=dom, input_values=input_values, form_xpath=formatted_form_xpath, lacked_field_xpath=formatted_lacked_field_xpath)
         result_list = response.split("```")
 
         if len(result_list) < 3:
@@ -35,10 +37,12 @@ class InputUpdaterHandler:
         # TODO: 改成retry
         raise
 
-    def get_input_value_list(self, dom, input_values, form_xpath) -> list[FormInputValue]:
+    def get_input_value_list(self, dom, input_values, form_xpath, lacked_field_xpath) -> list[FormInputValue]:
         # TODO: verify the result?
+        formatted_form_xpath = XPathFormatter.format(form_xpath)
+        formatted_lacked_field_xpath = XPathFormatter.format(lacked_field_xpath)
         result:list[FormInputValue] = []
-        input_value_list_str = self.get_response(dom=dom, input_values=input_values, form_xpath=form_xpath)
+        input_value_list_str = self.get_response(dom=dom, input_values=input_values, form_xpath=formatted_form_xpath, lacked_field_xpath=formatted_lacked_field_xpath)
         for input_value_dict in self.input_value_parser.parse(input_value_list_str):
             formatted_xpath = XPathFormatter.format(input_value_dict["xpath"])
             input_value = InputValue(xpath=formatted_xpath, value=input_value_dict["input_value"], action=input_value_dict["action_number"])
