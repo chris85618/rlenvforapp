@@ -51,6 +51,7 @@ from RLEnvForApp.usecase.environment.resetEnvironment.ResetEnvironmentUseCase im
 from RLEnvForApp.usecase.environment.state.dto.stateDTO import StateDTO
 from RLEnvForApp.usecase.repository.EpisodeHandlerRepository import EpisodeHandlerRepository
 from RLEnvForApp.usecase.repository.TargetPageRepository import TargetPageRepository
+from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveInput import CreateDirectiveInput
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveOutput import CreateDirectiveOutput
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveUseCase import CreateDirectiveUseCase
@@ -150,7 +151,7 @@ class LLMController:
             self.__target_form_xpath = reset_env_use_output.getFormXPath()
 
             state = self.__aut_operator.getState()
-            self.form_input_list = self._generate_input_values(self.__target_form_xpath, state)
+            # self.form_input_list = self._generate_input_values(self.__target_form_xpath, state)
 
             # # TODO: 更改遍歷form_input_list的爬行順序
             # # TODO: while not is_legal_directive:
@@ -325,7 +326,7 @@ class LLMController:
         #     input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
         #     while input_value is None:
         #         # Update input values
-        #         new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_input_value_list(dom=states[-1].getDOM(), input_values=input_values.toString(), form_xpath=form_xpath)
+        #         new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_response(dom=states[-1].getDOM(), input_values=input_values.toString(), form_xpath=form_xpath)
         #         for form_input_value in new_input_value_list:
         #             form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
         #         input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
@@ -337,11 +338,16 @@ class LLMController:
             repeat_counter = 0
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
             while input_value is None:
+                # Get new state
+                state = self.__aut_operator.getState()
+                dom = state.getDOM()
                 # Update input values
-                new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_input_value_list(dom=states[-1].getDOM(), input_values=form_input_value.toString(), form_xpath=form_xpath, lacked_field_xpath=xpath)
-                for form_input_value in new_input_value_list:
-                    form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
-                input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+                new_input_value_list: FormInputValueList = InputUpdaterHandler(llm_service=Gemini()).get_response(dom=dom, input_values=form_input_value.toString(), form_xpath=form_xpath, lacked_field_xpath=xpath)
+                if new_input_value_list.is_done() == False:
+                    form_input_value = new_input_value_list.get()
+                    form_input_value.update(dom, form_input_value.getInputValueDict())
+                    input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+                    break
                 repeat_counter += 1
                 if repeat_counter >= 3:
                     raise ValueError("Form input value is None for 3 times.")
@@ -406,16 +412,16 @@ class LLMController:
             self.__aut_controller.resetAUTServer(True)
             reset_env_use_case.execute(reset_env_use_input, reset_env_use_output)
 
-    def _get_form_elements(self, xpath, state) -> str:
-        page_dom_str = state.getDOM()
-        page_dom = Dom(page_dom_str)
-        target_dom = page_dom.getByXpath(xpath)
-        return target_dom.tostring()
-
-    def _generate_input_values(self, form_xpath, state) -> list[FormInputValue]:
-        self.__target_form_xpath = form_xpath
-        # Get form elements
-        self._form_elements = self._get_form_elements(form_xpath, state)
-        # Get input values
-        input_values = self.input_generator.get_input_value_list(dom=self._form_elements, form_xpath=form_xpath)
-        return LlmTestCombinationToFormInputValueListConverter().convert(input_values)
+    # def _get_form_elements(self, xpath, state) -> str:
+    #     page_dom_str = state.getDOM()
+    #     page_dom = Dom(page_dom_str)
+    #     target_dom = page_dom.getByXpath(xpath)
+    #     return target_dom.tostring()
+    # 
+    # def _generate_input_values(self, form_xpath, state) -> FormInputValueList:
+    #     self.__target_form_xpath = form_xpath
+    #     # Get form elements
+    #     self._form_elements = self._get_form_elements(form_xpath, state)
+    #     # Get input values
+    #     form_input_value_list = self.input_generator.get_response(dom=self._form_elements, form_xpath=form_xpath)
+    #     return form_input_value_list

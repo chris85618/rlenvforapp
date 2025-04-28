@@ -17,10 +17,7 @@ class InputValueHandler:
         # Get form elements
         form_elements = page_dom.getByXpath(form_xpath).tostring()
         # Get input values
-        input_values = InputGeneratorHandler().get_input_value_list(form_elements, form_xpath=form_xpath)
-        form_input_value_list = LlmTestCombinationToFormInputValueListConverter().convert(input_values)
-
-        form_input_value_list: FormInputValueList = FormInputValueList(form_input_value_list)
+        form_input_value_list = InputGeneratorHandler().get_response(form_elements, form_xpath=form_xpath)
         self.input_value_pool.add(url, form_xpath, form_input_value_list)
 
     def get(self, url:str, form_xpath:str) -> FormInputValue:
