@@ -1,7 +1,7 @@
 from typing import List
-from typing_extensions import Annotated, TypedDict
+from pydantic import BaseModel, Field
 from RLEnvForApp.domain.llmService.FormOutputResponse import FormOutputResponse
 
 
-class TestCombinationOutputResponse(TypedDict):
-    test_combination_list: Annotated[List[FormOutputResponse], "List of test combinations."]
+class TestCombinationOutputResponse(BaseModel):
+    test_combination_list: List[FormOutputResponse] = Field(..., description="List of test combinations.")

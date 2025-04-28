@@ -9,19 +9,16 @@ class FormInputValue:
 
     def __init__(self, *input_value_list: list[InputValue], page_dom: str = "", form_xpath: str = ""):
         for input_value in input_value_list:
-            xpath = input_value.getXpath()
-            formatted_xpath = XPathFormatter.format(xpath)
-            self.input_value_dict[formatted_xpath] = input_value
+            self.append(input_value)
         self.page_dom = page_dom
         self.form_xpath = form_xpath
     
     @classmethod
     def fromFormOutputResponse(cls, form_output_response: FormOutputResponse, page_dom: str = "", form_xpath: str = ""):
-        result = cls(page_dom=page_dom, form_xpath=form_xpath)
+        input_value_list = []
         for test_field_output_response in form_output_response.test_combination_list:
-            input_value = InputValue.fromTestFieldOutputResponse(test_field_output_response)
-            result.append(input_value)
-        return result
+            input_value_list.append(InputValue.fromTestFieldOutputResponse(test_field_output_response))
+        return cls(*input_value_list, page_dom=page_dom, form_xpath=form_xpath)
 
     def append(self, input_value: InputValue):
         xpath = input_value.getXpath()

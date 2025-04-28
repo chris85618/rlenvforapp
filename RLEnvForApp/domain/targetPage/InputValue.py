@@ -11,7 +11,7 @@ class InputValue:
         self.xpath = xpath
         self.value = value
         self.action = action
-    
+
     @classmethod
     def fromTestFieldOutputResponse(cls, test_field_output_response: TestFieldOutputResponse):
         return cls(

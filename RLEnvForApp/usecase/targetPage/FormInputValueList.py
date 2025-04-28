@@ -15,12 +15,12 @@ class FormInputValueList:
     
     @classmethod
     def fromTestCombinationOutputResponse(cls, test_combination_output_response: TestCombinationOutputResponse, page_dom: str = "", form_xpath: str = ""):
-        result = cls(form_xpath=form_xpath, page_dom=page_dom)
-        result.index = 0
+        form_input_value_list = []
         # Get input values
         for test_combination in test_combination_output_response.test_combination_list:
             form_input_value = FormInputValue.fromFormOutputResponse(test_combination, page_dom=page_dom, form_xpath=form_xpath)
-            result.form_input_value_list.append(form_input_value)
+            form_input_value_list.append(form_input_value)
+        result = cls(form_input_value_list)
         return result
 
     def get(self) -> FormInputValue:
