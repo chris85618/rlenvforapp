@@ -31,7 +31,6 @@ from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputUpdaterHandler import InputUpdaterHandler
-from RLEnvForApp.usecase.agent.model.InputGenerator.LlmTestCombinationToFormInputValueListConverter import LlmTestCombinationToFormInputValueListConverter
 from RLEnvForApp.adapter.targetPage.InputValueHandler import InputValueHandler
 
 from RLEnvForApp.usecase.environment.autOperator.AIGUIDEOperator import AIGUIDEOperator
@@ -55,7 +54,6 @@ from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveInput import CreateDirectiveInput
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveOutput import CreateDirectiveOutput
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveUseCase import CreateDirectiveUseCase
-from RLEnvForApp.usecase.targetPage.create.CreateFakeDirectiveUseCase import CreateFakeDirectiveUseCase
 from RLEnvForApp.usecase.targetPage.dto.DirectiveDTO import DirectiveDTO
 from RLEnvForApp.usecase.targetPage.remove.RemoveTargetPageInput import RemoveTargetPageInput
 from RLEnvForApp.usecase.targetPage.remove.RemoveTargetPageOutput import RemoveTargetPageOutput
@@ -73,12 +71,7 @@ class LLMController:
                  Provide[EnvironmentDIContainers.directiveRuleService],
                  repository: TargetPageRepository = Provide[EnvironmentDIContainers.targetPageRepository],
                  llm_service: ILlmService = Provide[EnvironmentDIContainers.llmService]):
-        self._llm_service = llm_service
-        llm_service_instance.set_llm(llm_service)
 
-        self._inputValueHandler = InputValueHandler()
-
-        self._fake_data = {}
         self._episode_handler_id = None
         self._form_counts = {}
         self._directive_rule_service = directive_rule_service
@@ -89,6 +82,12 @@ class LLMController:
         self.__application_port = 3100
         self.__coverage_server_port = 3100
         self.__code_coverage_type = "statement coverage"
+
+        self._llm_service = llm_service
+        llm_service_instance.set_llm(llm_service)
+
+        self._inputValueHandler = InputValueHandler()
+
         self._logger = Logger()
         self._logger.info("Init LLM.Env")
         self.__aut_controller = ApplicationUnderTestController(applicationName=self.__server_name,
@@ -117,19 +116,7 @@ class LLMController:
         self.__aut_controller.startAUTServer()
 
         self.input_generator = InputGeneratorHandler()
-        # TODO
-        # self.prompt_model_builder = PromptModelBuilder()
-        # self.fake_prompt_model_builder = PromptModelBuilder()
-        # self.prompt_model = PromptModelDirector().make_my_research(self.prompt_model_builder)
-        # self.fake_prompt_model = PromptModelDirector().make_fake_prompt_model(self.fake_prompt_model_builder)
-        # # check cuda
-        # if torch.cuda.is_available():
-        #     self._logger.info("CUDA is available")
-        #     torch.cuda.empty_cache()
-        #     self.prompt_model = self.prompt_model.cuda()
-        #     self.fake_prompt_model = self.fake_prompt_model.cuda()
 
-    # TODO: directive vs inputvalue?
     def play(self):
         while True:
             if len(self._repository.findAll()) == 0:
@@ -151,31 +138,6 @@ class LLMController:
             self.__target_form_xpath = reset_env_use_output.getFormXPath()
 
             state = self.__aut_operator.getState()
-            # self.form_input_list = self._generate_input_values(self.__target_form_xpath, state)
-
-            # # TODO: 更改遍歷form_input_list的爬行順序
-            # # TODO: while not is_legal_directive:
-            # for form_input_value_list in self.form_input_list:
-            #     # 從form_input_list找出符合app_element XPath的輸入值，跟LLM產出的結果做比較
-            #     target_xpath = app_element.getXpath()
-            #     input_value = form_input_value_list.getInputValueByXpath(target_xpath)
-            #     if input_value is None:
-            #         # update input values and retry
-            #         current_state = self.__aut_operator.getState()
-            #         self._update_input_values(state.getDOM(), current_state)
-
-            #     # TODO: input_value -> FormInputValueList
-            #     self._inputValueHandler.add(target_page_url, target_xpath, input_value)
-
-            #     final_submit = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl())
-
-            #     # TODO: if failed, update相關資訊(form可能有所改變)
-
-            #     # TODO: Fill in input values
-            #     if input_value is not None:
-            #         self._fill_input_value(app_element, input_value)
-                
-            #     # TODO: final_submit
 
             while not is_legal_directive:
                 # Get current app element from crawler
@@ -198,20 +160,15 @@ class LLMController:
                         try:
                             self._logger.info(f"Find legal directive, target page id: {self._target_page_id}")
                             self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
-                            # directive_dto = self._create_fake_directive(self._target_page_id, self._episode_handler_id)
-                            # self.__target_page_port.push_target_page_by_directive(self._target_page_id, directive_dto)
                             self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id)
-                            # self._fake_data = {}
                         except Exception as ex:
                             template = 'An exception of type {0} occurred. Arguments:\n{1!r}'
                             message = template.format(type(ex).__name__, ex.args)
                             self._logger.info(message)
-                            # self._fake_data = {}
                             self._logger.info(f"PUSH ERROR!!! {self.__crawler.getUrl()}")
                     else:
                         # TODO: This is a temporary solution by AI, need to be checked by human
                         self._form_counts[self._target_page_id] += 1
-                        # self._fake_data = {}
                         # clean the state
                         episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
                         episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
@@ -269,13 +226,6 @@ class LLMController:
         create_directive_use_case.execute(create_directive_input, create_directive_output)
         return create_directive_output.getDirectiveDTO()
 
-    def _create_fake_directive(self, target_page_id: str, episode_handler_id: str):
-        create_directive_use_case = CreateFakeDirectiveUseCase()
-        create_directive_input = CreateDirectiveInput(targetPageId=target_page_id, episodeHandlerId=episode_handler_id)
-        create_directive_output = CreateDirectiveOutput()
-        create_directive_use_case.execute(create_directive_input, create_directive_output, self._fake_data)
-        return create_directive_output.getDirectiveDTO()
-
     def _get_episode_handler_dto(self, episode_handler_id: str) -> EpisodeHandlerDTO:
         use_case = GetEpisodeHandlerUseCase()
         _input = GetEpisodeHandlerInput(episodeHandlerId=episode_handler_id)
@@ -319,21 +269,6 @@ class LLMController:
             action_number = 0
             final_submit = True
             input_value = InputValue("", "")
-        # elif self._check_is_password(app_element):
-        #     action_number = 25
-        #     # TODO: password
-        #     repeat_counter = 0
-        #     input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
-        #     while input_value is None:
-        #         # Update input values
-        #         new_input_value_list: list[FormInputValue] = InputUpdaterHandler(llm_service=Gemini()).get_response(dom=states[-1].getDOM(), input_values=input_values.toString(), form_xpath=form_xpath)
-        #         for form_input_value in new_input_value_list:
-        #             form_input_value.update(states[-1].getDOM(), form_input_value.getInputValueDict())
-        #         input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
-        #         repeat_counter += 1
-        #         if repeat_counter >= 3:
-        #             raise ValueError("Form input value is None for 3 times.")
-        #     action_number = input_value.getAction()
         else:
             repeat_counter = 0
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
@@ -361,7 +296,6 @@ class LLMController:
             episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
             episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
             state: State = episode_handler.getAllState()[-2]
-            # self._fake_data[state.getId()] = fake_preds
         except Exception as exception:
             self._logger.exception(f"Something wrong when execute action: {exception}")
             traceback.print_exc()
@@ -411,17 +345,3 @@ class LLMController:
         except RuntimeError:
             self.__aut_controller.resetAUTServer(True)
             reset_env_use_case.execute(reset_env_use_input, reset_env_use_output)
-
-    # def _get_form_elements(self, xpath, state) -> str:
-    #     page_dom_str = state.getDOM()
-    #     page_dom = Dom(page_dom_str)
-    #     target_dom = page_dom.getByXpath(xpath)
-    #     return target_dom.tostring()
-    # 
-    # def _generate_input_values(self, form_xpath, state) -> FormInputValueList:
-    #     self.__target_form_xpath = form_xpath
-    #     # Get form elements
-    #     self._form_elements = self._get_form_elements(form_xpath, state)
-    #     # Get input values
-    #     form_input_value_list = self.input_generator.get_response(dom=self._form_elements, form_xpath=form_xpath)
-    #     return form_input_value_list

@@ -3,7 +3,6 @@ from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.domain.targetPage.Dom import Dom
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
-from RLEnvForApp.usecase.agent.model.InputGenerator.LlmTestCombinationToFormInputValueListConverter import LlmTestCombinationToFormInputValueListConverter
 
 
 class InputValueHandler:
@@ -17,7 +16,7 @@ class InputValueHandler:
         # Get form elements
         form_elements = page_dom.getByXpath(form_xpath).tostring()
         # Get input values
-        form_input_value_list = InputGeneratorHandler().get_response(form_elements, form_xpath=form_xpath)
+        form_input_value_list: FormInputValueList = InputGeneratorHandler().get_response(form_elements, form_xpath=form_xpath)
         self.input_value_pool.add(url, form_xpath, form_input_value_list)
 
     def get(self, url:str, form_xpath:str) -> FormInputValue:

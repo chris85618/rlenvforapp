@@ -19,9 +19,6 @@ from RLEnvForApp.adapter.agent.model.builder.PromptModelDirector import PromptMo
 class InputValuePoolActionCommandFactory(IActionCommandFactoryService):
     def __init__(self):
         super().__init__()
-        self.__aut_name = ''
-        self.__url = ''
-        self.__xpath = ''
         self.__input_data = inputSpace.inputValues
         self.__input_type = PromptModelDirector.classes
 
@@ -60,12 +57,3 @@ class InputValuePoolActionCommandFactory(IActionCommandFactoryService):
 
     def getActionList(self) -> [str]:
         return self.__input_data
-
-    def setAutName(self, aut_name: str):
-        self.__aut_name = aut_name
-
-    def setUrl(self, url: str):
-        self.__url = url
-
-    def setXpath(self, xpath: str):
-        self.__xpath = xpath
