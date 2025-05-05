@@ -6,6 +6,8 @@ import time
 from io import StringIO
 from urllib.parse import urlparse
 
+from typing import Optional
+
 from dependency_injector.wiring import Provide, inject
 from lxml import etree
 
@@ -28,6 +30,7 @@ from RLEnvForApp.domain.targetPage.DirectiveRuleService.IDirectiveRuleService im
 from RLEnvForApp.domain.targetPage.Dom import Dom
 from RLEnvForApp.domain.targetPage.InputValue import InputValue
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
+from RLEnvForApp.domain.environment.actionCommandFactoryService.defaultValue.IDefaultValue import IDefaultValue
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputUpdaterHandler import InputUpdaterHandler
@@ -70,7 +73,8 @@ class LLMController:
                  directive_rule_service: IDirectiveRuleService =
                  Provide[EnvironmentDIContainers.directiveRuleService],
                  repository: TargetPageRepository = Provide[EnvironmentDIContainers.targetPageRepository],
-                 llm_service: ILlmService = Provide[EnvironmentDIContainers.llmService]):
+                 llm_service: ILlmService = Provide[EnvironmentDIContainers.llmService],
+                 default_value_fetcher: IDefaultValue = Provide[EnvironmentDIContainers.defaultValueFetcher]):
 
         self._episode_handler_id = None
         self._form_counts = {}
@@ -82,6 +86,9 @@ class LLMController:
         self.__application_port = 3100
         self.__coverage_server_port = 3100
         self.__code_coverage_type = "statement coverage"
+
+        default_value_fetcher.set_aut_name(self.__server_name)
+        self._default_value_fetcher = default_value_fetcher
 
         self._llm_service = llm_service
         llm_service_instance.set_llm(llm_service)
@@ -149,6 +156,14 @@ class LLMController:
 
                 state = self.__aut_operator.getState()
                 self._inputValueHandler.add(target_page_url, self.__target_form_xpath, Dom(state.getDOM()))
+                # Add valid input values if the elements have default values.
+                if self._inputValueHandler.is_first(target_page_url, self.__target_form_xpath):
+                    if self._inputValueHandler.is_done(target_page_url, self.__target_form_xpath) == False:
+                        form_input_value:FormInputValue = self._inputValueHandler.get(target_page_url, self.__target_form_xpath)
+                        default_value = self._get_default_value(target_page_url, form_input_value)
+                        if default_value is not None:
+                            first_index = 0
+                            self._inputValueHandler.insert(first_index, target_page_url, self.__target_form_xpath, default_value)
                 final_submit: ExecuteActionOutput = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl(), self.__target_form_xpath)
 
                 if self._target_page_id not in self._form_counts:
@@ -268,11 +283,14 @@ class LLMController:
         if is_submit_button:
             action_number = 0
             final_submit = True
-            input_value = InputValue("", "")
+            input_value = InputValue("", "", 0)
         else:
             repeat_counter = 0
             input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
             while input_value is None:
+                if repeat_counter >= 3:
+                    raise ValueError("Form input value is None for 3 times.")
+                repeat_counter += 1
                 # Get new state
                 state = self.__aut_operator.getState()
                 dom = state.getDOM()
@@ -282,10 +300,6 @@ class LLMController:
                     form_input_value = new_input_value_list.get()
                     form_input_value.update(dom, form_input_value.getInputValueDict())
                     input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
-                    break
-                repeat_counter += 1
-                if repeat_counter >= 3:
-                    raise ValueError("Form input value is None for 3 times.")
             action_number = input_value.getAction()
 
         execute_action_input = ExecuteActionInput(action_number, self._episode_handler_id, self.__server_name, target_url,
@@ -345,3 +359,14 @@ class LLMController:
         except RuntimeError:
             self.__aut_controller.resetAUTServer(True)
             reset_env_use_case.execute(reset_env_use_input, reset_env_use_output)
+
+    def _get_default_value(self, url: str, form_input_value: FormInputValue) -> Optional[FormInputValue]:
+        # Check if the xpath is in the default value
+        result = FormInputValue.fromFormInputValue(form_input_value)
+        # Get default input values
+        default_value_list = self._default_value_fetcher.get_xpath_default_value_dict(url)
+        if default_value_list is None:
+            return None
+        for xpath, default_value in default_value_list.items():
+            result.append(InputValue(xpath, default_value, 1))
+        return result

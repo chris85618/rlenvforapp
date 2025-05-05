@@ -33,3 +33,10 @@ class FormInputValueList:
     
     def is_done(self) -> bool:
         return self.index >= len(self.form_input_value_list)
+    
+    def is_first(self) -> bool:
+        return self.index == 0
+    
+    # TODO: describe side effect
+    def insert(self, index:int, form_input_value:FormInputValue):
+        self.form_input_value_list.insert(index, form_input_value)

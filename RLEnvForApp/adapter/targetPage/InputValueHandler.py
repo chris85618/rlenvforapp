@@ -18,6 +18,12 @@ class InputValueHandler:
         # Get input values
         form_input_value_list: FormInputValueList = InputGeneratorHandler().get_response(form_elements, form_xpath=form_xpath)
         self.input_value_pool.add(url, form_xpath, form_input_value_list)
+    
+    def insert(self, index:int, url:str, form_xpath:str, form_input_value:FormInputValue):
+        form_input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
+        if form_input_value_list is None:
+            raise ValueError("FormInputValueList not found.")
+        form_input_value_list.insert(index, form_input_value)
 
     def get(self, url:str, form_xpath:str) -> FormInputValue:
         input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
@@ -37,3 +43,17 @@ class InputValueHandler:
 
     def next(self, url:str, form_xpath:str):
         self.get_and_next(url, form_xpath)
+
+    def is_exist(self, url:str, form_xpath:str) -> bool:
+        input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
+        return input_value_list is not None
+    
+    def is_done(self, url:str, form_xpath:str) -> bool:
+        form_input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
+        return form_input_value_list.is_done()
+
+    def is_first(self, url:str, form_xpath:str) -> int:
+        input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
+        if input_value_list is None:
+            raise ValueError("FormInputValueList not found.")
+        return input_value_list.is_first()
