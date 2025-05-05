@@ -8,16 +8,26 @@ class FormInputValue:
     page_dom:str=""
 
     def __init__(self, *input_value_list: list[InputValue], page_dom: str = "", form_xpath: str = ""):
+        self.input_value_dict = {}
+        formatted_form_xpath = XPathFormatter.format(form_xpath)
+        self.form_xpath = formatted_form_xpath
+
+        self.page_dom = page_dom
+
         for input_value in input_value_list:
             self.append(input_value)
-        self.page_dom = page_dom
-        self.form_xpath = form_xpath
     
     @classmethod
     def fromFormOutputResponse(cls, form_output_response: FormOutputResponse, page_dom: str = "", form_xpath: str = ""):
-        input_value_list = []
-        for test_field_output_response in form_output_response.test_combination_list:
-            input_value_list.append(InputValue.fromTestFieldOutputResponse(test_field_output_response))
+        input_value_list = [InputValue.fromTestFieldOutputResponse(test_field_output_response)
+                            for test_field_output_response in form_output_response.test_combination_list]
+        return cls(*input_value_list, page_dom=page_dom, form_xpath=form_xpath)
+    
+    @classmethod
+    def fromFormInputValue(cls, form_input_value):
+        form_xpath = form_input_value.form_xpath
+        input_value_list = form_input_value.getInputValueList()
+        page_dom = form_input_value.page_dom
         return cls(*input_value_list, page_dom=page_dom, form_xpath=form_xpath)
 
     def append(self, input_value: InputValue):
@@ -32,7 +42,6 @@ class FormInputValue:
         for xpath, input_value in form_input_value_dict.items():
             formatted_xpath = XPathFormatter.format(xpath)
             self.input_value_dict[formatted_xpath] = input_value
-        
 
     def getInputValueList(self) -> list[InputValue]:
         return self.input_value_dict.values()
@@ -49,6 +58,9 @@ class FormInputValue:
     
     def getInputValueItems(self) -> dict:
         return self.input_value_dict.items()
+    
+    def getInputValueKeys(self) -> list[str]:
+        return self.input_value_dict.keys()
     
     def toString(self) -> str:
         result = ""

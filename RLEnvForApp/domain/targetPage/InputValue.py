@@ -1,5 +1,5 @@
-from RLEnvForApp.domain.targetPage.Dom import Dom
 from RLEnvForApp.domain.llmService.TestFieldOutputResponse import TestFieldOutputResponse
+from RLEnvForApp.domain.environment.xpath.XPathFormatter import XPathFormatter
 
 
 class InputValue:
@@ -7,10 +7,10 @@ class InputValue:
     xpath:str = ""
     value:str = ""
 
-    def __init__(self, xpath:str, value:str, action=None):
-        self.xpath = xpath
-        self.value = value
-        self.action = action
+    def __init__(self, xpath:str, value:str, action:int):
+        self.xpath = str(XPathFormatter.format(xpath))
+        self.value = str(value)
+        self.action = int(action)
 
     @classmethod
     def fromTestFieldOutputResponse(cls, test_field_output_response: TestFieldOutputResponse):
