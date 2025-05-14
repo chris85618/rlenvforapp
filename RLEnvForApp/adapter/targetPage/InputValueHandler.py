@@ -57,3 +57,9 @@ class InputValueHandler:
         if input_value_list is None:
             raise ValueError("FormInputValueList not found.")
         return input_value_list.is_first()
+
+    def getFormInputValueList(self, url:str, form_xpath:str) -> FormInputValueList:
+        form_input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
+        # if form_input_value_list is None:
+        #     raise ValueError("FormInputValueList not found.")
+        return form_input_value_list

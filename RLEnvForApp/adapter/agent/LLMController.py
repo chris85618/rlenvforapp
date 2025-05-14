@@ -175,7 +175,7 @@ class LLMController:
                         try:
                             self._logger.info(f"Find legal directive, target page id: {self._target_page_id}")
                             self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
-                            self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id)
+                            self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id, formInputValueList=self._inputValueHandler.getFormInputValueList(target_page_url, self.__target_form_xpath))
                         except Exception as ex:
                             template = 'An exception of type {0} occurred. Arguments:\n{1!r}'
                             message = template.format(type(ex).__name__, ex.args)
@@ -192,7 +192,7 @@ class LLMController:
                         self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
                         if self._form_counts[self._target_page_id] >= 10:
                             self._form_counts[self._target_page_id] = 0
-                            directive_dto = self._create_directive(self._target_page_id, self._episode_handler_id)
+                            directive_dto = self._create_directive(self._target_page_id, self._episode_handler_id, form_input_value_list=self._inputValueHandler.getFormInputValueList(target_page_url, self.__target_form_xpath))
                             self._save_target_page_to_html_set(self._episode_handler_id, directive_dto)
                             self._remove_target_page()
                             break
@@ -234,9 +234,9 @@ class LLMController:
         file_manager.createFile(path=os.path.join("htmlSet", "FAILED_HTML_SET"),
                                 fileName=file_name + ".json", context=directive_log_json)
 
-    def _create_directive(self, target_page_id: str, episode_handler_id: str):
+    def _create_directive(self, target_page_id: str, episode_handler_id: str, form_input_value_list: FormInputValueList):
         create_directive_use_case = CreateDirectiveUseCase()
-        create_directive_input = CreateDirectiveInput(targetPageId=target_page_id, episodeHandlerId=episode_handler_id)
+        create_directive_input = CreateDirectiveInput(targetPageId=target_page_id, episodeHandlerId=episode_handler_id, formInputValueList=form_input_value_list)
         create_directive_output = CreateDirectiveOutput()
         create_directive_use_case.execute(create_directive_input, create_directive_output)
         return create_directive_output.getDirectiveDTO()

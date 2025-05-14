@@ -73,7 +73,7 @@ class CreateDirectiveUseCase:
 
         initialState: State = episodeEpisodeHandler.getState(0)
         directive = Directive(url=initialState.getUrl(), dom=initialState.getDOM(
-        ), formXPath=targetPage.getFormXPath(), appEvents=appEvents, codeCoverages=codeCoverages)
+        ), formXPath=targetPage.getFormXPath(), appEvents=appEvents, codeCoverages=codeCoverages, formInputValueList=input.getFormInputValueList())
         targetPage.appendDirective(directive=directive)
         self._targetPageRepository.update(
             TargetPageEntityMapper.mappingTargetPageEntityFrom(targetPage=targetPage))

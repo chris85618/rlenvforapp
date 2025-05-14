@@ -43,6 +43,12 @@ class FormInputValue:
             formatted_xpath = XPathFormatter.format(xpath)
             self.input_value_dict[formatted_xpath] = input_value
 
+    def getFormXPath(self) -> str:
+        return self.form_xpath
+
+    def getPageDom(self) -> str:
+        return self.page_dom
+
     def getInputValueList(self) -> list[InputValue]:
         return self.input_value_dict.values()
     

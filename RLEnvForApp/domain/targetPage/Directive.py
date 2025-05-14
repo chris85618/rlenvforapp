@@ -1,14 +1,16 @@
 from RLEnvForApp.domain.environment.state.CodeCoverage import CodeCoverage
 from RLEnvForApp.domain.targetPage.AppEvent import AppEvent
+from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
 
 
 class Directive:
-    def __init__(self, url: str, dom: str, formXPath: str, appEvents: [AppEvent], codeCoverages: [CodeCoverage]):
+    def __init__(self, url: str, dom: str, formXPath: str, appEvents: [AppEvent], codeCoverages: [CodeCoverage], formInputValueList: FormInputValueList):
         self._url = url
         self._dom = dom
         self._formXPath = formXPath
         self._appEvents = appEvents
         self._codeCoverages = codeCoverages
+        self._formInputValueList = formInputValueList
 
     def getUrl(self) -> str:
         return self._url
@@ -29,3 +31,6 @@ class Directive:
         for codeCoverage in self._codeCoverages:
             if codeCoverage.getCodeCoverageType() == codeCoverageType:
                 return codeCoverage
+
+    def getFormInputValueList(self) -> FormInputValueList:
+        return self._formInputValueList
