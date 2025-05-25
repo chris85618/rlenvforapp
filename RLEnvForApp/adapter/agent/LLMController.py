@@ -262,7 +262,7 @@ class LLMController:
         execute_action_output = ExecuteActionOutput()
 
         if is_submit_button:
-            action_number = 0
+            category = 0
             final_submit = True
             input_value = AppEvent("", "", 0)
         else:
@@ -281,9 +281,9 @@ class LLMController:
                     form_input_value = new_input_value_list.get()
                     form_input_value.update(dom, form_input_value.getInputValueDict())
                     input_value: AppEvent = form_input_value.getInputValueByXpath(xpath)
-            action_number = input_value.getCategory()
+            category = input_value.getCategory()
 
-        execute_action_input = ExecuteActionInput(action_number, self._episode_handler_id, self.__server_name, target_url,
+        execute_action_input = ExecuteActionInput(category, self._episode_handler_id, self.__server_name, target_url,
                                                   app_element.getXpath(), value=input_value.getValue())
 
         try:

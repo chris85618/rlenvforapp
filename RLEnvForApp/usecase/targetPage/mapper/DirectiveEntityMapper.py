@@ -32,17 +32,17 @@ def _mappingFormInputValueEntitiesFrom(formInputValueList: FormInputValueList) -
     formInputValueEntities: list[FormInputValueEntity] = []
     while not formInputValueList.is_done():
         formInputValue: FormInputValue = formInputValueList.get()
-        inputValueEntities: list[AppEvent] = []
+        appEventEntities: list[AppEvent] = []
         # Get the input value list from the form input value entity
         for inputValue in formInputValue.getInputValueList():
             xpath: str = inputValue.getXpath()
             value: str = inputValue.getValue()
-            action: int = inputValue.getCategory()
-            inputValueEntities.append(AppEvent(xpath=xpath, value=value, action=action))
+            category: int = inputValue.getCategory()
+            appEventEntities.append(AppEvent(xpath=xpath, value=value, category=category))
         pageDom = formInputValue.getPageDom()
         formXPath = formInputValue.getFormXPath()
         # Create a FormInputValueEntity object and append it to the list
-        formInputValueEntities.append(FormInputValueEntity(inputValueListEntities=inputValueEntities, page_dom=pageDom, form_xpath=formXPath))
+        formInputValueEntities.append(FormInputValueEntity(appEventEntities=appEventEntities, page_dom=pageDom, form_xpath=formXPath))
         formInputValueList.next()
     return formInputValueEntities
 
@@ -57,8 +57,8 @@ def _mappingFormInputValueListFrom(formInputValueEntities: [FormInputValueEntity
         for inputValueEntity in inputValueEntityList:
             xpath:str = inputValueEntity.getXpath()
             value:str = inputValueEntity.getValue()
-            action:int = inputValueEntity.getCategory()
-            inputValueList.append(AppEvent(xpath=xpath, value=value, action=action))
+            category:int = inputValueEntity.getCategory()
+            inputValueList.append(AppEvent(xpath=xpath, value=value, category=category))
         pageDom = formInputValueEntity.getPageDom()
         formXPath = formInputValueEntity.getFormXPath()
         # Create a FormInputValue object and append it to the list
