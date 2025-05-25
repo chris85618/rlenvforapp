@@ -7,7 +7,7 @@ class HighLevelActionEntity:
         self._page_dom = page_dom
         self._form_xpath = form_xpath
 
-    def getInputValueListEntities(self) -> [AppEventEntity]:
+    def getAppEventEntities(self) -> [AppEventEntity]:
         return self._appEventEntities
 
     def getPageDom(self) -> str:

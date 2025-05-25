@@ -7,7 +7,7 @@ from RLEnvForApp.usecase.targetPage.entity.AppEventEntity import AppEventEntity
 from RLEnvForApp.usecase.targetPage.entity.DirectiveEntity import DirectiveEntity
 from RLEnvForApp.usecase.targetPage.mapper import AppEventEntityMapper
 from RLEnvForApp.usecase.targetPage.entity.HighLevelActionEntity import HighLevelActionEntity
-from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
+from RLEnvForApp.usecase.targetPage.HighLevelActionList import HighLevelActionList
 from RLEnvForApp.domain.targetPage.HighLevelAction import HighLevelAction
 
 
@@ -27,43 +27,43 @@ def _mappingCodeCoverageFrom(codeCoverageEntities: [CodeCoverageEntity]) -> [Cod
     return codeCoverages
 
 
-def _mappingHighLevelActionEntitiesFrom(formInputValueList: FormInputValueList) -> [HighLevelActionEntity]:
-    # TODO: refector this
+def _mappingHighLevelActionEntitiesFrom(highLevelActionList: HighLevelActionList) -> [HighLevelActionEntity]:
+    # TODO: refactor this
     highLevelActionEntities: list[HighLevelActionEntity] = []
-    while not formInputValueList.is_done():
-        highLevelAction: HighLevelAction = formInputValueList.get()
-        appEventEntities: list[AppEvent] = []
+    while not highLevelActionList.is_done():
+        highLevelAction: HighLevelAction = highLevelActionList.get()
+        appEventEntities: list[AppEventEntity] = []
         # Get the input value list from the form input value entity
-        for inputValue in highLevelAction.getInputValueList():
-            xpath: str = inputValue.getXpath()
-            value: str = inputValue.getValue()
-            category: int = inputValue.getCategory()
-            appEventEntities.append(AppEvent(xpath=xpath, value=value, category=category))
+        for appEvent in highLevelAction.getAppEventList():
+            xpath: str = appEvent.getXpath()
+            value: str = appEvent.getValue()
+            category: int = appEvent.getCategory()
+            appEventEntities.append(AppEventEntity(xpath=xpath, value=value, category=category))
         pageDom = highLevelAction.getPageDom()
         formXPath = highLevelAction.getFormXPath()
         # Create a HighLevelActionEntity object and append it to the list
         highLevelActionEntities.append(HighLevelActionEntity(appEventEntities=appEventEntities, page_dom=pageDom, form_xpath=formXPath))
-        formInputValueList.next()
+        highLevelActionList.next()
     return highLevelActionEntities
 
 
-def _mappingFormInputValueListFrom(highLevelActionEntities: [HighLevelActionEntity]) -> FormInputValueList:
+def _mappingHighLevelActionListFrom(highLevelActionEntities: [HighLevelActionEntity]) -> HighLevelActionList:
     # TODO: refector this
     highLevelActionList: list[HighLevelAction] = []
     for highLevelActionEntity in highLevelActionEntities:
-        inputValueList: list[AppEvent] = []
+        appEventList: list[AppEvent] = []
         # Get the input value list from the form input value entity
-        inputValueEntityList: [AppEventEntity] = highLevelActionEntity.getInputValueListEntities()
-        for inputValueEntity in inputValueEntityList:
-            xpath:str = inputValueEntity.getXpath()
-            value:str = inputValueEntity.getValue()
-            category:int = inputValueEntity.getCategory()
-            inputValueList.append(AppEvent(xpath=xpath, value=value, category=category))
+        appEventEntityList: [AppEventEntity] = highLevelActionEntity.getAppEventEntities()
+        for appEventEntity in appEventEntityList:
+            xpath:str = appEventEntity.getXpath()
+            value:str = appEventEntity.getValue()
+            category:int = appEventEntity.getCategory()
+            appEventList.append(AppEvent(xpath=xpath, value=value, category=category))
         pageDom = highLevelActionEntity.getPageDom()
         formXPath = highLevelActionEntity.getFormXPath()
         # Create a HighLevelAction object and append it to the list
-        highLevelActionList.append(HighLevelAction(*inputValueList, page_dom=pageDom, form_xpath=formXPath))
-    return FormInputValueList(highLevelActionList)
+        highLevelActionList.append(HighLevelAction(*appEventList, page_dom=pageDom, form_xpath=formXPath))
+    return HighLevelActionList(highLevelActionList)
 
 
 def mappingDirectiveEntityFrom(directive: Directive) -> DirectiveEntity:
@@ -71,7 +71,7 @@ def mappingDirectiveEntityFrom(directive: Directive) -> DirectiveEntity:
     for appEvent in directive.getAppEvents():
         appEventEntities.append(AppEventEntityMapper.mappingAppEventEntityFrom(appEvent=appEvent))
     return DirectiveEntity(url=directive.getUrl(), dom=directive.getDom(), formXPath=directive.getFormXPath(), appEventEntities=appEventEntities, codeCoverageEntities=_mappingCodeCoverageEntitiesFrom(directive.getCodeCoverages()),
-                           highLevelActionEntities=_mappingHighLevelActionEntitiesFrom(directive.getFormInputValueList()))
+                           highLevelActionEntities=_mappingHighLevelActionEntitiesFrom(directive.getHighLevelActionList()))
 
 
 def mappingDirectiveFrom(directiveEntity: DirectiveEntity) -> Directive:
@@ -79,4 +79,4 @@ def mappingDirectiveFrom(directiveEntity: DirectiveEntity) -> Directive:
     for appEventEntity in directiveEntity.getAppEventEntities():
         appEvents.append(AppEventEntityMapper.mappingAppEventFrom(appEventEntity=appEventEntity))
     return Directive(url=directiveEntity.getUrl(), dom=directiveEntity.getDom(), formXPath=directiveEntity.getFormXPath(), appEvents=appEvents, codeCoverages=_mappingCodeCoverageFrom(directiveEntity.getCodeCoverageEntities()),
-                     formInputValueList=_mappingFormInputValueListFrom(directiveEntity.getHighLevelActionEntities()))
+                     highLevelActionList=_mappingHighLevelActionListFrom(directiveEntity.getHighLevelActionEntities()))

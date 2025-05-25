@@ -26,20 +26,20 @@ class HighLevelAction:
     @classmethod
     def fromHighLevelAction(cls, high_level_action):
         form_xpath = high_level_action.form_xpath
-        app_event_list = high_level_action.getInputValueList()
+        app_event_list = high_level_action.getAppEventList()
         page_dom = high_level_action.page_dom
         return cls(*app_event_list, page_dom=page_dom, form_xpath=form_xpath)
 
-    def append(self, input_value: AppEvent):
-        xpath = input_value.getXpath()
+    def append(self, app_event: AppEvent):
+        xpath = app_event.getXpath()
         formatted_xpath = XPathFormatter.format(xpath)
-        self.app_event_dict[formatted_xpath] = input_value
+        self.app_event_dict[formatted_xpath] = app_event
 
-    def update(self, new_page_dom: str, form_input_value_dict: dict[str, AppEvent]):
+    def update(self, new_page_dom: str, updated_app_event_dict: dict[str, AppEvent]):
         # Update the page DOM if it has changed
         self.page_dom = new_page_dom
         # Update the input value dictionary with new values
-        for xpath, app_event in form_input_value_dict.items():
+        for xpath, app_event in updated_app_event_dict.items():
             formatted_xpath = XPathFormatter.format(xpath)
             self.app_event_dict[formatted_xpath] = app_event
 
@@ -49,24 +49,15 @@ class HighLevelAction:
     def getPageDom(self) -> str:
         return self.page_dom
 
-    def getInputValueList(self) -> list[AppEvent]:
+    def getAppEventList(self) -> list[AppEvent]:
         return self.app_event_dict.values()
     
-    def getInputValueByIndex(self, index) -> AppEvent:
-        return self.app_event_dict.values()[index]
-    
-    def getInputValueByXpath(self, xpath:str) -> AppEvent:
+    def getAppEventByXpath(self, xpath:str) -> AppEvent:
         formatted_xpath = XPathFormatter.format(xpath)
         return self.app_event_dict.get(formatted_xpath)
     
-    def getInputValueDict(self) -> dict:
+    def getAppEventDict(self) -> dict:
         return self.app_event_dict
-    
-    def getInputValueItems(self) -> dict:
-        return self.app_event_dict.items()
-    
-    def getInputValueKeys(self) -> list[str]:
-        return self.app_event_dict.keys()
     
     def toString(self) -> str:
         result = ""

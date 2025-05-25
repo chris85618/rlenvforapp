@@ -26,5 +26,5 @@ class DirectiveDTO:
     def getCodeCoverageDTOs(self) -> [CodeCoverageDTO]:
         return self._codeCoverageDTOs
 
-    def getFormInputValueList(self) -> [HighLevelActionDTO]:
+    def getHighLevelActionDTOs(self) -> [HighLevelActionDTO]:
         return self._highLevelActionDTOs

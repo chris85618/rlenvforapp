@@ -29,7 +29,7 @@ from RLEnvForApp.usecase.targetPage.get import (GetAllTargetPageInput, GetAllTar
                                                 GetTargetPageOutput, GetTargetPageUseCase)
 from RLEnvForApp.usecase.targetPage.remove import (RemoveTargetPageInput, RemoveTargetPageOutput,
                                                    RemoveTargetPageUseCase)
-from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
+from RLEnvForApp.usecase.targetPage.HighLevelActionList import HighLevelActionList
 
 
 class AIGuideTargetPagePort(ITargetPagePort):
@@ -96,9 +96,9 @@ class AIGuideTargetPagePort(ITargetPagePort):
                     self._javaObjectLearningTaskDTOs.append(javaObjectLearningTaskDTO)
             isFirst = False
 
-    def pushTargetPage(self, target_page_id: str, episode_handler_id: str, formInputValueList: FormInputValueList):
+    def pushTargetPage(self, target_page_id: str, episode_handler_id: str, highLevelActionList: HighLevelActionList):
         directive_dto = self._createDirective(
-            targetPageId=target_page_id, episodeHandlerId=episode_handler_id, formInputValueList=formInputValueList)
+            targetPageId=target_page_id, episodeHandlerId=episode_handler_id, highLevelActionList=highLevelActionList)
         target_page_dto: TargetPageDTO = self._getTargetPage(targetPageId=target_page_id)
 
         self._javaObjectPy4JLearningPool.enQueueLearningResultDTO(
@@ -157,10 +157,10 @@ class AIGuideTargetPagePort(ITargetPagePort):
         getTargetPageUseCase.execute(input=getTargetPageInput, output=getTargetPageOutput)
         return getTargetPageOutput.getTargetPageDTO()
 
-    def _createDirective(self, targetPageId: str, episodeHandlerId: str, formInputValueList: FormInputValueList):
+    def _createDirective(self, targetPageId: str, episodeHandlerId: str, highLevelActionList: HighLevelActionList):
         createDirectiveUseCase = CreateDirectiveUseCase.CreateDirectiveUseCase()
         createDirectiveInput = CreateDirectiveInput.CreateDirectiveInput(
-            targetPageId=targetPageId, episodeHandlerId=episodeHandlerId, formInputValueList=formInputValueList)
+            targetPageId=targetPageId, episodeHandlerId=episodeHandlerId, highLevelActionList=highLevelActionList)
         createDirectiveOutput = CreateDirectiveOutput.CreateDirectiveOutput()
         createDirectiveUseCase.execute(createDirectiveInput, createDirectiveOutput)
 
@@ -251,30 +251,30 @@ class AIGuideTargetPagePort(ITargetPagePort):
         javaObjectLearningResultDTOBuilder.setOriginalCodeCoverageVector(
             javaObjectLearningTaskDTO.getCodeCoverageVector())
         # set form input value
-        javaObjectFormInputValueListDTO = self._createJavaObjectFormInputValueListDTO(directiveDTO.getFormInputValueList())
-        javaObjectLearningResultDTOBuilder.setFormInputValueList(javaObjectFormInputValueListDTO)
+        javaObjectHighLevelActionListDTO = self._createJavaObjectHighLevelActionListDTO(directiveDTO.getHighLevelActionDTOs())
+        javaObjectLearningResultDTOBuilder.setFormInputValueList(javaObjectHighLevelActionListDTO)
         javaObjectLearningResultDTOBuilder.setDone(False)
         return javaObjectLearningResultDTOBuilder.build()
 
-    # def _createJavaObjectInputValueDTO(self, inputValueDTO: AppEventDTO):
-    #     javaObjectInputValueDTOBuilder = self._javaObjectPy4JLearningPool.getInputValueDTOBuilder()
-    #     javaObjectInputValueDTOBuilder.setXpath(inputValueDTO.getXpath())
-    #     javaObjectInputValueDTOBuilder.setXpath(inputValueDTO.getXpath())
-    #     javaObjectInputValueDTOBuilder.setInputValue(inputValueDTO.getValue())
-    #     javaObjectInputValueDTOBuilder.setAction(inputValueDTO.getCategory())
-    #     return javaObjectInputValueDTOBuilder.build()
+    # def _createJavaObjectActionDTO(self, appEventDTO: AppEventDTO):
+    #     javaObjectActionDTOBuilder = self._javaObjectPy4JLearningPool.getInputValueDTOBuilder()
+    #     javaObjectActionDTOBuilder.setXpath(appEventDTO.getXpath())
+    #     javaObjectActionDTOBuilder.setXpath(appEventDTO.getXpath())
+    #     javaObjectActionDTOBuilder.setInputValue(appEventDTO.getValue())
+    #     javaObjectActionDTOBuilder.setAction(appEventDTO.getCategory())
+    #     return javaObjectActionDTOBuilder.build()
 
     # def _createJavaObjectHighLevelActionDTO(self, highLevelActionDTO: HighLevelActionDTO):
-    #     javaObjectFormInputValueDTOBuilder = self._javaObjectPy4JLearningPool.getFormInputValueDTOBuilder()
-    #     for action in highLevelActionDTO.getInputValueListDto():
-    #         javaObjectFormInputValueDTOBuilder.addInputValue(action)
-    #     return javaObjectFormInputValueDTOBuilder.build()
+    #     javaObjectHighLevelActionDTOBuilder = self._javaObjectPy4JLearningPool.getFormInputValueDTOBuilder()
+    #     for action in highLevelActionDTO.getAppEventDTOList():
+    #         javaObjectHighLevelActionDTOBuilder.addInputValue(action)
+    #     return javaObjectHighLevelActionDTOBuilder.build()
 
-    def _createJavaObjectFormInputValueListDTO(self, highLevelActionDTOList: [HighLevelActionDTO]):
-        javaObjectFormInputValueListDTOBuilder = self._javaObjectPy4JLearningPool.getFormInputValueListDTOBuilder()
+    def _createJavaObjectHighLevelActionListDTO(self, highLevelActionDTOList: [HighLevelActionDTO]):
+        javaObjectHighLevelActionListDTOBuilder = self._javaObjectPy4JLearningPool.getFormInputValueListDTOBuilder()
         for highLevelActionDTO in highLevelActionDTOList:
-            javaObjectFormInputValueListDTOBuilder.addFormInputValue(highLevelActionDTO)
-        return javaObjectFormInputValueListDTOBuilder.build()
+            javaObjectHighLevelActionListDTOBuilder.addFormInputValue(highLevelActionDTO)
+        return javaObjectHighLevelActionListDTOBuilder.build()
 
     def _saveTargetPageToHtmlSet(self, episodeHandlerId: str, directiveDTO: DirectiveDTO):
         fileName = f"{self._serverName}_{urlparse(directiveDTO.getUrl()).path.replace('/', '_')}_{directiveDTO.getFormXPath().replace('/', '_')}"

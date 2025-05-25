@@ -1,16 +1,16 @@
-from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
+from RLEnvForApp.usecase.targetPage.HighLevelActionList import HighLevelActionList
 
 class CreateDirectiveInput:
-    def __init__(self, targetPageId: str, episodeHandlerId: str, formInputValueList: FormInputValueList):
+    def __init__(self, targetPageId: str, episodeHandlerId: str, highLevelActionList: HighLevelActionList):
         self._targetPageId = targetPageId
         self._episodeHandlerId = episodeHandlerId
-        self._formInputValueList = formInputValueList
+        self._highLevelActionList = highLevelActionList
 
     def getTargetPageId(self):
         return self._targetPageId
 
     def getEpisodeHandlerId(self):
         return self._episodeHandlerId
-    
-    def getFormInputValueList(self):
-        return self._formInputValueList
+
+    def getHighLevelActionList(self):
+        return self._highLevelActionList

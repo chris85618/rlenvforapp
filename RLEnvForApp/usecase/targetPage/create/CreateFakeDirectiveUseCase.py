@@ -73,7 +73,7 @@ class CreateFakeDirectiveUseCase:
 
         initial_state: State = episode_episode_handler.getState(0)
         directive = Directive(url=initial_state.getUrl(), dom=initial_state.getDOM(),
-                              formXPath=target_page.getFormXPath(), appEvents=app_events, codeCoverages=code_coverages, formInputValueList=input.getFormInputValueList())
+                              formXPath=target_page.getFormXPath(), appEvents=app_events, codeCoverages=code_coverages, highLevelActionList=input.getHighLevelActionList())
         target_page.appendDirective(directive=directive)
         self._target_page_repository.update(TargetPageEntityMapper.mappingTargetPageEntityFrom(targetPage=target_page))
 

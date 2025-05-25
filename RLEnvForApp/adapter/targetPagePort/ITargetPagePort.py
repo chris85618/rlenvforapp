@@ -1,5 +1,5 @@
 from RLEnvForApp.usecase.targetPage.dto.DirectiveDTO import DirectiveDTO
-from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
+from RLEnvForApp.usecase.targetPage.HighLevelActionList import HighLevelActionList
 
 
 class ITargetPagePort:
@@ -18,7 +18,7 @@ class ITargetPagePort:
     def pullTargetPage(self):
         pass
 
-    def pushTargetPage(self, targetPageId: str, episodeHandlerId: str, formInputValueList: FormInputValueList):
+    def pushTargetPage(self, targetPageId: str, episodeHandlerId: str, highLevelActionList: HighLevelActionList):
         pass
 
     def push_target_page_by_directive(self, target_page_id: str, directive_dto: DirectiveDTO):

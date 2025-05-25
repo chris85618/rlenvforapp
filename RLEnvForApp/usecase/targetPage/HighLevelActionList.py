@@ -2,7 +2,7 @@ from RLEnvForApp.domain.targetPage.HighLevelAction import HighLevelAction
 from RLEnvForApp.domain.llmService.TestCombinationOutputResponse import TestCombinationOutputResponse
 
 
-class FormInputValueList:
+class HighLevelActionList:
     # form_xpath = None
     # page_dom = None
     high_level_action_list: list[HighLevelAction] = []

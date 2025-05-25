@@ -3,7 +3,7 @@ from RLEnvForApp.domain.llmService.SystemPromptFactory import SystemPromptFactor
 from RLEnvForApp.domain.llmService.LlmTemplateService import LlmTemplateService
 from RLEnvForApp.domain.llmService.TestCombinationOutputResponse import TestCombinationOutputResponse
 from RLEnvForApp.domain.environment.xpath.XPathFormatter import XPathFormatter
-from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
+from RLEnvForApp.usecase.targetPage.HighLevelActionList import HighLevelActionList
 from configuration.di.EnvironmentDIContainers import EnvironmentDIContainers
 from dependency_injector.wiring import Provide
 
@@ -19,5 +19,5 @@ class InputGeneratorHandler:
     def get_response(self, dom, form_xpath:str):
         formatted_form_xpath = XPathFormatter.format(form_xpath)
         test_combination_output_response:TestCombinationOutputResponse = self.llm_service.get_structured_response(dom=dom, form_xpath=formatted_form_xpath)
-        form_input_value_list = FormInputValueList.fromTestCombinationOutputResponse(test_combination_output_response, page_dom=dom, form_xpath=formatted_form_xpath)
-        return form_input_value_list
+        high_level_action_list = HighLevelActionList.fromTestCombinationOutputResponse(test_combination_output_response, page_dom=dom, form_xpath=formatted_form_xpath)
+        return high_level_action_list

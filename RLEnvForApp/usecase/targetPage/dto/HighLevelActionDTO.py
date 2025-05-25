@@ -7,7 +7,7 @@ class HighLevelActionDTO:
         self._page_dom = page_dom
         self._form_xpath = form_xpath
 
-    def getInputValueDTOList(self) -> [AppEventDTO]:
+    def getAppEventDTOList(self) -> [AppEventDTO]:
         return self._app_event_dto_list
 
     def getPageDom(self) -> str:

@@ -53,7 +53,7 @@ from RLEnvForApp.usecase.environment.resetEnvironment.ResetEnvironmentUseCase im
 from RLEnvForApp.usecase.environment.state.dto.stateDTO import StateDTO
 from RLEnvForApp.usecase.repository.EpisodeHandlerRepository import EpisodeHandlerRepository
 from RLEnvForApp.usecase.repository.TargetPageRepository import TargetPageRepository
-from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
+from RLEnvForApp.usecase.targetPage.HighLevelActionList import HighLevelActionList
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveInput import CreateDirectiveInput
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveOutput import CreateDirectiveOutput
 from RLEnvForApp.usecase.targetPage.create.CreateDirectiveUseCase import CreateDirectiveUseCase
@@ -170,7 +170,7 @@ class LLMController:
             try:
                 self._logger.info(f"Find legal directive, target page id: {self._target_page_id}")
                 self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
-                self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id, formInputValueList=self._inputValueHandler.getFormInputValueList(target_page_url, self.__target_form_xpath))
+                self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id, highLevelActionList=self._inputValueHandler.getHighLevelActionList(target_page_url, self.__target_form_xpath))
             except Exception as ex:
                 template = 'An exception of type {0} occurred. Arguments:\n{1!r}'
                 message = template.format(type(ex).__name__, ex.args)
@@ -215,9 +215,9 @@ class LLMController:
         file_manager.createFile(path=os.path.join("htmlSet", "FAILED_HTML_SET"),
                                 fileName=file_name + ".json", context=directive_log_json)
 
-    def _create_directive(self, target_page_id: str, episode_handler_id: str, form_input_value_list: FormInputValueList):
+    def _create_directive(self, target_page_id: str, episode_handler_id: str, high_level_action_list: HighLevelActionList):
         create_directive_use_case = CreateDirectiveUseCase()
-        create_directive_input = CreateDirectiveInput(targetPageId=target_page_id, episodeHandlerId=episode_handler_id, formInputValueList=form_input_value_list)
+        create_directive_input = CreateDirectiveInput(targetPageId=target_page_id, episodeHandlerId=episode_handler_id, highLevelActionList=high_level_action_list)
         create_directive_output = CreateDirectiveOutput()
         create_directive_use_case.execute(create_directive_input, create_directive_output)
         return create_directive_output.getDirectiveDTO()
@@ -264,11 +264,11 @@ class LLMController:
         if is_submit_button:
             category = 0
             final_submit = True
-            input_value = AppEvent("", "", 0)
+            app_event = AppEvent("", "", 0)
         else:
             repeat_counter = 0
-            input_value: AppEvent = high_level_action.getInputValueByXpath(xpath)
-            while input_value is None:
+            app_event: AppEvent = high_level_action.getAppEventByXpath(xpath)
+            while app_event is None:
                 if repeat_counter >= 3:
                     raise ValueError("Form input value is None for 3 times.")
                 repeat_counter += 1
@@ -276,15 +276,15 @@ class LLMController:
                 state = self.__aut_operator.getState()
                 dom = state.getDOM()
                 # Update input values
-                new_input_value_list: FormInputValueList = InputUpdaterHandler(llm_service=Gemini()).get_response(dom=dom, input_values=high_level_action.toString(), form_xpath=form_xpath, lacked_field_xpath=xpath)
-                if new_input_value_list.is_done() == False:
-                    high_level_action = new_input_value_list.get()
-                    high_level_action.update(dom, high_level_action.getInputValueDict())
-                    input_value: AppEvent = high_level_action.getInputValueByXpath(xpath)
-            category = input_value.getCategory()
+                new_high_level_action_list: HighLevelActionList = InputUpdaterHandler(llm_service=Gemini()).get_response(dom=dom, input_values=high_level_action.toString(), form_xpath=form_xpath, lacked_field_xpath=xpath)
+                if new_high_level_action_list.is_done() == False:
+                    high_level_action = new_high_level_action_list.get()
+                    high_level_action.update(dom, high_level_action.getAppEventDict())
+                    app_event: AppEvent = high_level_action.getAppEventByXpath(xpath)
+            category = app_event.getCategory()
 
         execute_action_input = ExecuteActionInput(category, self._episode_handler_id, self.__server_name, target_url,
-                                                  app_element.getXpath(), value=input_value.getValue())
+                                                  app_element.getXpath(), value=app_event.getValue())
 
         try:
             execute_action_use_case.execute(input=execute_action_input, output=execute_action_output)
