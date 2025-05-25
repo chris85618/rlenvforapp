@@ -11,7 +11,6 @@ from RLEnvForApp.adapter.targetPagePort.FileManager import FileManager
 from RLEnvForApp.adapter.targetPagePort.ITargetPagePort import ITargetPagePort
 from RLEnvForApp.domain.environment.inputSpace import ValueWeightSingleton, inputTypes, inputValues
 from RLEnvForApp.logger.logger import Logger
-from RLEnvForApp.usecase.targetPage.dto.InputValueDTO import InputValueDTO
 from RLEnvForApp.usecase.targetPage.dto.FormInputValueDTO import FormInputValueDTO
 from RLEnvForApp.usecase.environment.autOperator.dto.CodeCoverageDTO import CodeCoverageDTO
 from RLEnvForApp.usecase.environment.episodeHandler.dto.EpisodeHandlerDTO import EpisodeHandlerDTO
@@ -257,12 +256,12 @@ class AIGuideTargetPagePort(ITargetPagePort):
         javaObjectLearningResultDTOBuilder.setDone(False)
         return javaObjectLearningResultDTOBuilder.build()
 
-    def _createJavaObjectInputValueDTO(self, InputValueDTO: InputValueDTO):
+    def _createJavaObjectInputValueDTO(self, inputValueDTO: AppEventDTO):
         javaObjectInputValueDTOBuilder = self._javaObjectPy4JLearningPool.getInputValueDTOBuilder()
-        javaObjectInputValueDTOBuilder.setXpath(InputValueDTO.getXpath())
-        javaObjectInputValueDTOBuilder.setXpath(InputValueDTO.getXpath())
-        javaObjectInputValueDTOBuilder.setInputValue(InputValueDTO.getValue())
-        javaObjectInputValueDTOBuilder.setAction(InputValueDTO.getAction())
+        javaObjectInputValueDTOBuilder.setXpath(inputValueDTO.getXpath())
+        javaObjectInputValueDTOBuilder.setXpath(inputValueDTO.getXpath())
+        javaObjectInputValueDTOBuilder.setInputValue(inputValueDTO.getValue())
+        javaObjectInputValueDTOBuilder.setAction(inputValueDTO.getCategory())
         return javaObjectInputValueDTOBuilder.build()
 
     def _createJavaObjectFormInputValueDTO(self, formInputValueDTO: FormInputValueDTO):

@@ -28,7 +28,7 @@ from RLEnvForApp.domain.llmService.ILlmService import ILlmService
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.FormSubmitCriteriaSingleton import FormSubmitCriteriaSingleton
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.IDirectiveRuleService import IDirectiveRuleService
 from RLEnvForApp.domain.targetPage.Dom import Dom
-from RLEnvForApp.domain.targetPage.InputValue import InputValue
+from RLEnvForApp.domain.targetPage.AppEvent import AppEvent
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.domain.environment.actionCommandFactoryService.defaultValue.IDefaultValue import IDefaultValue
 from RLEnvForApp.logger.logger import Logger
@@ -81,7 +81,7 @@ class LLMController:
         self._directive_rule_service = directive_rule_service
         self._episode_handler_repository = episode_handler_repository
         self._repository = repository
-        self.__server_name = "astuto"
+        self.__server_name = "keystonejs_with_coverage"
         self.__application_ip = "localhost"
         self.__application_port = 3100
         self.__coverage_server_port = 3100
@@ -146,56 +146,37 @@ class LLMController:
 
             state = self.__aut_operator.getState()
 
-            while not is_legal_directive:
-                # Get current app element from crawler
-                app_element: AppElement = self.__aut_operator.getFocusedAppElement()
-                if app_element is None:
-                    if len(self.__aut_operator.getAllSelectedAppElements()) == 0:
-                        self._remove_target_page()
-                    break
+            # Get current app element from crawler
+            app_element: AppElement = self.__aut_operator.getFocusedAppElement()
+            if app_element is None:
+                if len(self.__aut_operator.getAllSelectedAppElements()) == 0:
+                    self._remove_target_page()
+                break
 
-                state = self.__aut_operator.getState()
-                self._inputValueHandler.add(target_page_url, self.__target_form_xpath, Dom(state.getDOM()))
-                # Add valid input values if the elements have default values.
-                if self._inputValueHandler.is_first(target_page_url, self.__target_form_xpath):
-                    if self._inputValueHandler.is_done(target_page_url, self.__target_form_xpath) == False:
-                        form_input_value:FormInputValue = self._inputValueHandler.get(target_page_url, self.__target_form_xpath)
-                        default_value = self._get_default_value(target_page_url, form_input_value)
-                        if default_value is not None:
-                            first_index = 0
-                            self._inputValueHandler.insert(first_index, target_page_url, self.__target_form_xpath, default_value)
-                final_submit: ExecuteActionOutput = self._execute_action(app_element, reset_env_use_output.getTargetPageUrl(), self.__target_form_xpath)
+            state = self.__aut_operator.getState()
+            self._inputValueHandler.add(target_page_url, self.__target_form_xpath, Dom(state.getDOM()))
+            # Add valid input values if the elements have default values.
+            if self._inputValueHandler.is_first(target_page_url, self.__target_form_xpath):
+                if self._inputValueHandler.is_done(target_page_url, self.__target_form_xpath) == False:
+                    form_input_value:FormInputValue = self._inputValueHandler.get(target_page_url, self.__target_form_xpath)
+                    default_value = self._get_default_value(target_page_url, form_input_value)
+                    if default_value is not None:
+                        first_index = 0
+                        self._inputValueHandler.insert(first_index, target_page_url, self.__target_form_xpath, default_value)
 
-                if self._target_page_id not in self._form_counts:
-                    self._form_counts[self._target_page_id] = 1
+            if self._target_page_id not in self._form_counts:
+                self._form_counts[self._target_page_id] = 1
 
-                if final_submit.getIsDone():
-                    is_legal_directive: bool = self._is_legal_directive()
-                    if is_legal_directive:
-                        try:
-                            self._logger.info(f"Find legal directive, target page id: {self._target_page_id}")
-                            self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
-                            self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id, formInputValueList=self._inputValueHandler.getFormInputValueList(target_page_url, self.__target_form_xpath))
-                        except Exception as ex:
-                            template = 'An exception of type {0} occurred. Arguments:\n{1!r}'
-                            message = template.format(type(ex).__name__, ex.args)
-                            self._logger.info(message)
-                            self._logger.info(f"PUSH ERROR!!! {self.__crawler.getUrl()}")
-                    else:
-                        # TODO: This is a temporary solution by AI, need to be checked by human
-                        self._form_counts[self._target_page_id] += 1
-                        # clean the state
-                        episode_handler_entity = self._episode_handler_repository.findById(self._episode_handler_id)
-                        episode_handler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(episode_handler_entity)
-                        episode_handler.remain_only_index_zero_state()
-                        self._logger.info(f"Find illegal directive, target page id: {self._target_page_id}")
-                        self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
-                        if self._form_counts[self._target_page_id] >= 10:
-                            self._form_counts[self._target_page_id] = 0
-                            directive_dto = self._create_directive(self._target_page_id, self._episode_handler_id, form_input_value_list=self._inputValueHandler.getFormInputValueList(target_page_url, self.__target_form_xpath))
-                            self._save_target_page_to_html_set(self._episode_handler_id, directive_dto)
-                            self._remove_target_page()
-                            break
+            try:
+                self._logger.info(f"Find legal directive, target page id: {self._target_page_id}")
+                self._logger.info(f"Number of attempts: {self._form_counts[self._target_page_id]}")
+                self.__target_page_port.pushTargetPage(self._target_page_id, self._episode_handler_id, formInputValueList=self._inputValueHandler.getFormInputValueList(target_page_url, self.__target_form_xpath))
+            except Exception as ex:
+                template = 'An exception of type {0} occurred. Arguments:\n{1!r}'
+                message = template.format(type(ex).__name__, ex.args)
+                self._logger.info(message)
+                self._logger.info(f"PUSH ERROR!!! {self.__crawler.getUrl()}")
+
             end_time = time.time_ns()
             print(f"Total time: {(end_time - begin_time) / 1000000}ms")
 
@@ -283,10 +264,10 @@ class LLMController:
         if is_submit_button:
             action_number = 0
             final_submit = True
-            input_value = InputValue("", "", 0)
+            input_value = AppEvent("", "", 0)
         else:
             repeat_counter = 0
-            input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
+            input_value: AppEvent = form_input_value.getInputValueByXpath(xpath)
             while input_value is None:
                 if repeat_counter >= 3:
                     raise ValueError("Form input value is None for 3 times.")
@@ -299,8 +280,8 @@ class LLMController:
                 if new_input_value_list.is_done() == False:
                     form_input_value = new_input_value_list.get()
                     form_input_value.update(dom, form_input_value.getInputValueDict())
-                    input_value: InputValue = form_input_value.getInputValueByXpath(xpath)
-            action_number = input_value.getAction()
+                    input_value: AppEvent = form_input_value.getInputValueByXpath(xpath)
+            action_number = input_value.getCategory()
 
         execute_action_input = ExecuteActionInput(action_number, self._episode_handler_id, self.__server_name, target_url,
                                                   app_element.getXpath(), value=input_value.getValue())
@@ -368,5 +349,5 @@ class LLMController:
         if default_value_list is None:
             return None
         for xpath, default_value in default_value_list.items():
-            result.append(InputValue(xpath, default_value, 1))
+            result.append(AppEvent(xpath, default_value, 1))
         return result

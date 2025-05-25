@@ -7,11 +7,8 @@ from RLEnvForApp.usecase.targetPage.entity.AppEventEntity import AppEventEntity
 from RLEnvForApp.usecase.targetPage.entity.DirectiveEntity import DirectiveEntity
 from RLEnvForApp.usecase.targetPage.mapper import AppEventEntityMapper
 from RLEnvForApp.usecase.targetPage.entity.FormInputValueEntity import FormInputValueEntity
-from RLEnvForApp.usecase.targetPage.entity.InputValueEntity import InputValueEntity
 from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
-from RLEnvForApp.domain.targetPage.InputValue import InputValue
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
-from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
 
 
 def _mappingCodeCoverageEntitiesFrom(odeCoverages: [CodeCoverage]) -> [CodeCoverageEntity]:
@@ -35,13 +32,13 @@ def _mappingFormInputValueEntitiesFrom(formInputValueList: FormInputValueList) -
     formInputValueEntities: list[FormInputValueEntity] = []
     while not formInputValueList.is_done():
         formInputValue: FormInputValue = formInputValueList.get()
-        inputValueEntities: list[InputValue] = []
+        inputValueEntities: list[AppEvent] = []
         # Get the input value list from the form input value entity
         for inputValue in formInputValue.getInputValueList():
             xpath: str = inputValue.getXpath()
             value: str = inputValue.getValue()
-            action: int = inputValue.getAction()
-            inputValueEntities.append(InputValue(xpath=xpath, value=value, action=action))
+            action: int = inputValue.getCategory()
+            inputValueEntities.append(AppEvent(xpath=xpath, value=value, action=action))
         pageDom = formInputValue.getPageDom()
         formXPath = formInputValue.getFormXPath()
         # Create a FormInputValueEntity object and append it to the list
@@ -54,14 +51,14 @@ def _mappingFormInputValueListFrom(formInputValueEntities: [FormInputValueEntity
     # TODO: refector this
     formInputValueList: list[FormInputValue] = []
     for formInputValueEntity in formInputValueEntities:
-        inputValueList: list[InputValue] = []
+        inputValueList: list[AppEvent] = []
         # Get the input value list from the form input value entity
-        inputValueEntityList: [InputValueEntity] = formInputValueEntity.getInputValueListEntities()
+        inputValueEntityList: [AppEventEntity] = formInputValueEntity.getInputValueListEntities()
         for inputValueEntity in inputValueEntityList:
             xpath:str = inputValueEntity.getXpath()
             value:str = inputValueEntity.getValue()
-            action:int = inputValueEntity.getAction()
-            inputValueList.append(InputValue(xpath=xpath, value=value, action=action))
+            action:int = inputValueEntity.getCategory()
+            inputValueList.append(AppEvent(xpath=xpath, value=value, action=action))
         pageDom = formInputValueEntity.getPageDom()
         formXPath = formInputValueEntity.getFormXPath()
         # Create a FormInputValue object and append it to the list

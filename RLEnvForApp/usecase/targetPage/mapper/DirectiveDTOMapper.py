@@ -6,9 +6,7 @@ from RLEnvForApp.usecase.environment.autOperator.mapper import CodeCoverageDTOMa
 from RLEnvForApp.usecase.targetPage.dto.AppEventDTO import AppEventDTO
 from RLEnvForApp.usecase.targetPage.dto.DirectiveDTO import DirectiveDTO
 from RLEnvForApp.usecase.targetPage.mapper import AppEventDTOMapper
-from RLEnvForApp.usecase.targetPage.dto.InputValueDTO import InputValueDTO
 from RLEnvForApp.usecase.targetPage.dto.FormInputValueDTO import FormInputValueDTO
-from RLEnvForApp.domain.targetPage.InputValue import InputValue
 from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
 from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
 
@@ -34,13 +32,13 @@ def _mappingFormInputValueDTOsFrom(formInputValueList: FormInputValueList) -> [F
     formInputValueDTOs: list[FormInputValueDTO] = []
     while not formInputValueList.is_done():
         formInputValue: FormInputValue = formInputValueList.get()
-        inputValueDTOList: list[InputValueDTO] = []
+        inputValueDTOList: list[AppEventDTO] = []
         # Get the input value list from the form input value DTO
         for inputValue in formInputValue.getInputValueList():
             xpath: str = inputValue.getXpath()
             value: str = inputValue.getValue()
-            action: int = inputValue.getAction()
-            inputValueDTOList.append(InputValueDTO(xpath=xpath, value=value, action=action))
+            action: int = inputValue.getCategory()
+            inputValueDTOList.append(AppEventDTO(xpath=xpath, value=value, action=action))
         pageDom = formInputValue.getPageDom()
         formXPath = formInputValue.getFormXPath()
         # Create a FormInputValue object and append it to the list
@@ -53,14 +51,14 @@ def _mappingFormInputValueListFrom(formInputValueDTOs: [FormInputValueDTO]) -> F
     # TODO: refector this
     formInputValueList: list[FormInputValue] = []
     for formInputValueDTO in formInputValueDTOs:
-        inputValueList: list[InputValue] = []
+        inputValueList: list[AppEvent] = []
         # Get the input value list from the form input value DTO
-        inputValueDTOList: [InputValueDTO] = formInputValueDTO.getInputValueListDto()
+        inputValueDTOList: [AppEventDTO] = formInputValueDTO.getInputValueDTOList()
         for inputValueDTO in inputValueDTOList:
             xpath:str = inputValueDTO.getXpath()
             value:str = inputValueDTO.getValue()
-            action:int = inputValueDTO.getAction()
-            inputValueList.append(InputValue(xpath=xpath, value=value, action=action))
+            action:int = inputValueDTO.getCategory()
+            inputValueList.append(AppEvent(xpath=xpath, value=value, action=action))
         pageDom = formInputValueDTOs.getPageDom()
         formXPath = formInputValueDTOs.getFormXPath()
         # Create a FormInputValue object and append it to the list
