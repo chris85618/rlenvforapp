@@ -1,7 +1,7 @@
 from RLEnvForApp.usecase.targetPage.entity.AppEventEntity import AppEventEntity
 
 
-class FormInputValueEntity:
+class HighLevelActionEntity:
     def __init__(self, appEventEntities: [AppEventEntity], page_dom: str, form_xpath: str):
         self._appEventEntities = appEventEntities
         self._page_dom = page_dom

@@ -3,8 +3,7 @@ from RLEnvForApp.domain.environment.xpath.XPathFormatter import XPathFormatter
 from RLEnvForApp.domain.llmService.FormOutputResponse import FormOutputResponse
 
 
-# TODO: change class name
-class FormInputValue:
+class HighLevelAction:
     app_event_dict: {str, AppEvent} = {}
     page_dom:str=""
 
@@ -25,10 +24,10 @@ class FormInputValue:
         return cls(*app_event_list, page_dom=page_dom, form_xpath=form_xpath)
     
     @classmethod
-    def fromFormInputValue(cls, form_input_value):
-        form_xpath = form_input_value.form_xpath
-        app_event_list = form_input_value.getInputValueList()
-        page_dom = form_input_value.page_dom
+    def fromHighLevelAction(cls, high_level_action):
+        form_xpath = high_level_action.form_xpath
+        app_event_list = high_level_action.getInputValueList()
+        page_dom = high_level_action.page_dom
         return cls(*app_event_list, page_dom=page_dom, form_xpath=form_xpath)
 
     def append(self, input_value: AppEvent):

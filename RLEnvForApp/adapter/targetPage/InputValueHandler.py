@@ -1,6 +1,6 @@
 from RLEnvForApp.adapter.targetPage.FormInputValueListPool import FormInputValueListPool
 from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
-from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
+from RLEnvForApp.domain.targetPage.HighLevelAction import HighLevelAction
 from RLEnvForApp.domain.targetPage.Dom import Dom
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
 
@@ -19,19 +19,19 @@ class InputValueHandler:
         form_input_value_list: FormInputValueList = InputGeneratorHandler().get_response(form_elements, form_xpath=form_xpath)
         self.input_value_pool.add(url, form_xpath, form_input_value_list)
     
-    def insert(self, index:int, url:str, form_xpath:str, form_input_value:FormInputValue):
+    def insert(self, index:int, url:str, form_xpath:str, high_level_action:HighLevelAction):
         form_input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
         if form_input_value_list is None:
             raise ValueError("FormInputValueList not found.")
-        form_input_value_list.insert(index, form_input_value)
+        form_input_value_list.insert(index, high_level_action)
 
-    def get(self, url:str, form_xpath:str) -> FormInputValue:
+    def get(self, url:str, form_xpath:str) -> HighLevelAction:
         input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
         if input_value_list.is_done():
             return None
         return input_value_list.get()
 
-    def get_and_next(self, url:str, form_xpath:str) -> FormInputValue:
+    def get_and_next(self, url:str, form_xpath:str) -> HighLevelAction:
         result = None
         form_input_value_list: FormInputValueList = self.input_value_pool.get(url, form_xpath)
         if form_input_value_list is not None:

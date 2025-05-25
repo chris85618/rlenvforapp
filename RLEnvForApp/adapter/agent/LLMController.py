@@ -29,7 +29,7 @@ from RLEnvForApp.domain.targetPage.DirectiveRuleService.FormSubmitCriteriaSingle
 from RLEnvForApp.domain.targetPage.DirectiveRuleService.IDirectiveRuleService import IDirectiveRuleService
 from RLEnvForApp.domain.targetPage.Dom import Dom
 from RLEnvForApp.domain.targetPage.AppEvent import AppEvent
-from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
+from RLEnvForApp.domain.targetPage.HighLevelAction import HighLevelAction
 from RLEnvForApp.domain.environment.actionCommandFactoryService.defaultValue.IDefaultValue import IDefaultValue
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.agent.model.InputGenerator.InputGeneratorHandler import InputGeneratorHandler
@@ -158,8 +158,8 @@ class LLMController:
             # Add valid input values if the elements have default values.
             if self._inputValueHandler.is_first(target_page_url, self.__target_form_xpath):
                 if self._inputValueHandler.is_done(target_page_url, self.__target_form_xpath) == False:
-                    form_input_value:FormInputValue = self._inputValueHandler.get(target_page_url, self.__target_form_xpath)
-                    default_value = self._get_default_value(target_page_url, form_input_value)
+                    high_level_action:HighLevelAction = self._inputValueHandler.get(target_page_url, self.__target_form_xpath)
+                    default_value = self._get_default_value(target_page_url, high_level_action)
                     if default_value is not None:
                         first_index = 0
                         self._inputValueHandler.insert(first_index, target_page_url, self.__target_form_xpath, default_value)
@@ -237,8 +237,8 @@ class LLMController:
         xpath = app_element.getXpath()
 
         # get input values
-        form_input_value: FormInputValue = self._inputValueHandler.get(target_url, form_xpath)
-        if form_input_value is None:
+        high_level_action: HighLevelAction = self._inputValueHandler.get(target_url, form_xpath)
+        if high_level_action is None:
             # FInish testing this form
             execute_action_output = ExecuteActionOutput()
             execute_action_output.setIsDone(True)
@@ -267,7 +267,7 @@ class LLMController:
             input_value = AppEvent("", "", 0)
         else:
             repeat_counter = 0
-            input_value: AppEvent = form_input_value.getInputValueByXpath(xpath)
+            input_value: AppEvent = high_level_action.getInputValueByXpath(xpath)
             while input_value is None:
                 if repeat_counter >= 3:
                     raise ValueError("Form input value is None for 3 times.")
@@ -276,11 +276,11 @@ class LLMController:
                 state = self.__aut_operator.getState()
                 dom = state.getDOM()
                 # Update input values
-                new_input_value_list: FormInputValueList = InputUpdaterHandler(llm_service=Gemini()).get_response(dom=dom, input_values=form_input_value.toString(), form_xpath=form_xpath, lacked_field_xpath=xpath)
+                new_input_value_list: FormInputValueList = InputUpdaterHandler(llm_service=Gemini()).get_response(dom=dom, input_values=high_level_action.toString(), form_xpath=form_xpath, lacked_field_xpath=xpath)
                 if new_input_value_list.is_done() == False:
-                    form_input_value = new_input_value_list.get()
-                    form_input_value.update(dom, form_input_value.getInputValueDict())
-                    input_value: AppEvent = form_input_value.getInputValueByXpath(xpath)
+                    high_level_action = new_input_value_list.get()
+                    high_level_action.update(dom, high_level_action.getInputValueDict())
+                    input_value: AppEvent = high_level_action.getInputValueByXpath(xpath)
             category = input_value.getCategory()
 
         execute_action_input = ExecuteActionInput(category, self._episode_handler_id, self.__server_name, target_url,
@@ -341,9 +341,9 @@ class LLMController:
             self.__aut_controller.resetAUTServer(True)
             reset_env_use_case.execute(reset_env_use_input, reset_env_use_output)
 
-    def _get_default_value(self, url: str, form_input_value: FormInputValue) -> Optional[FormInputValue]:
+    def _get_default_value(self, url: str, high_level_action: HighLevelAction) -> Optional[HighLevelAction]:
         # Check if the xpath is in the default value
-        result = FormInputValue.fromFormInputValue(form_input_value)
+        result = HighLevelAction.fromHighLevelAction(high_level_action)
         # Get default input values
         default_value_list = self._default_value_fetcher.get_xpath_default_value_dict(url)
         if default_value_list is None:

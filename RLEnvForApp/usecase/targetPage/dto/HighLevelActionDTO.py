@@ -1,7 +1,7 @@
 from RLEnvForApp.usecase.targetPage.dto.AppEventDTO import AppEventDTO
 
 
-class FormInputValueDTO:
+class HighLevelActionDTO:
     def __init__(self, app_event_dto_list: [AppEventDTO], page_dom: str, form_xpath: str):
         self._app_event_dto_list = app_event_dto_list
         self._page_dom = page_dom

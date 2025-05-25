@@ -11,7 +11,7 @@ from RLEnvForApp.adapter.targetPagePort.FileManager import FileManager
 from RLEnvForApp.adapter.targetPagePort.ITargetPagePort import ITargetPagePort
 from RLEnvForApp.domain.environment.inputSpace import ValueWeightSingleton, inputTypes, inputValues
 from RLEnvForApp.logger.logger import Logger
-from RLEnvForApp.usecase.targetPage.dto.FormInputValueDTO import FormInputValueDTO
+from RLEnvForApp.usecase.targetPage.dto.HighLevelActionDTO import HighLevelActionDTO
 from RLEnvForApp.usecase.environment.autOperator.dto.CodeCoverageDTO import CodeCoverageDTO
 from RLEnvForApp.usecase.environment.episodeHandler.dto.EpisodeHandlerDTO import EpisodeHandlerDTO
 from RLEnvForApp.usecase.environment.episodeHandler.get import (GetEpisodeHandlerInput,
@@ -256,24 +256,24 @@ class AIGuideTargetPagePort(ITargetPagePort):
         javaObjectLearningResultDTOBuilder.setDone(False)
         return javaObjectLearningResultDTOBuilder.build()
 
-    def _createJavaObjectInputValueDTO(self, inputValueDTO: AppEventDTO):
-        javaObjectInputValueDTOBuilder = self._javaObjectPy4JLearningPool.getInputValueDTOBuilder()
-        javaObjectInputValueDTOBuilder.setXpath(inputValueDTO.getXpath())
-        javaObjectInputValueDTOBuilder.setXpath(inputValueDTO.getXpath())
-        javaObjectInputValueDTOBuilder.setInputValue(inputValueDTO.getValue())
-        javaObjectInputValueDTOBuilder.setAction(inputValueDTO.getCategory())
-        return javaObjectInputValueDTOBuilder.build()
+    # def _createJavaObjectInputValueDTO(self, inputValueDTO: AppEventDTO):
+    #     javaObjectInputValueDTOBuilder = self._javaObjectPy4JLearningPool.getInputValueDTOBuilder()
+    #     javaObjectInputValueDTOBuilder.setXpath(inputValueDTO.getXpath())
+    #     javaObjectInputValueDTOBuilder.setXpath(inputValueDTO.getXpath())
+    #     javaObjectInputValueDTOBuilder.setInputValue(inputValueDTO.getValue())
+    #     javaObjectInputValueDTOBuilder.setAction(inputValueDTO.getCategory())
+    #     return javaObjectInputValueDTOBuilder.build()
 
-    def _createJavaObjectFormInputValueDTO(self, formInputValueDTO: FormInputValueDTO):
-        javaObjectFormInputValueDTOBuilder = self._javaObjectPy4JLearningPool.getFormInputValueDTOBuilder()
-        for inputValue in formInputValueDTO.getInputValueListDto():
-            javaObjectFormInputValueDTOBuilder.addInputValue(inputValue)
-        return javaObjectFormInputValueDTOBuilder.build()
+    # def _createJavaObjectHighLevelActionDTO(self, highLevelActionDTO: HighLevelActionDTO):
+    #     javaObjectFormInputValueDTOBuilder = self._javaObjectPy4JLearningPool.getFormInputValueDTOBuilder()
+    #     for action in highLevelActionDTO.getInputValueListDto():
+    #         javaObjectFormInputValueDTOBuilder.addInputValue(action)
+    #     return javaObjectFormInputValueDTOBuilder.build()
 
-    def _createJavaObjectFormInputValueListDTO(self, formInputValueListDTO: [FormInputValueDTO]):
+    def _createJavaObjectFormInputValueListDTO(self, highLevelActionDTOList: [HighLevelActionDTO]):
         javaObjectFormInputValueListDTOBuilder = self._javaObjectPy4JLearningPool.getFormInputValueListDTOBuilder()
-        for formInputValueDTO in formInputValueListDTO:
-            javaObjectFormInputValueListDTOBuilder.addFormInputValue(formInputValueListDTO)
+        for highLevelActionDTO in highLevelActionDTOList:
+            javaObjectFormInputValueListDTOBuilder.addFormInputValue(highLevelActionDTO)
         return javaObjectFormInputValueListDTOBuilder.build()
 
     def _saveTargetPageToHtmlSet(self, episodeHandlerId: str, directiveDTO: DirectiveDTO):

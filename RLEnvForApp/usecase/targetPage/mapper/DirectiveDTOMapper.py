@@ -6,8 +6,8 @@ from RLEnvForApp.usecase.environment.autOperator.mapper import CodeCoverageDTOMa
 from RLEnvForApp.usecase.targetPage.dto.AppEventDTO import AppEventDTO
 from RLEnvForApp.usecase.targetPage.dto.DirectiveDTO import DirectiveDTO
 from RLEnvForApp.usecase.targetPage.mapper import AppEventDTOMapper
-from RLEnvForApp.usecase.targetPage.dto.FormInputValueDTO import FormInputValueDTO
-from RLEnvForApp.domain.targetPage.FormInputValue import FormInputValue
+from RLEnvForApp.usecase.targetPage.dto.HighLevelActionDTO import HighLevelActionDTO
+from RLEnvForApp.domain.targetPage.HighLevelAction import HighLevelAction
 from RLEnvForApp.usecase.targetPage.FormInputValueList import FormInputValueList
 
 
@@ -27,43 +27,43 @@ def _mappingCodeCoverageFrom(codeCoverageDTOs: [CodeCoverageDTO]) -> [CodeCovera
     return codeCoverages
 
 
-def _mappingFormInputValueDTOsFrom(formInputValueList: FormInputValueList) -> [FormInputValueDTO]:
+def _mappingHighLevelActionDTOsFrom(formInputValueList: FormInputValueList) -> [HighLevelActionDTO]:
     # TODO: refector this
-    formInputValueDTOs: list[FormInputValueDTO] = []
+    highLevelActionDTOs: list[HighLevelActionDTO] = []
     while not formInputValueList.is_done():
-        formInputValue: FormInputValue = formInputValueList.get()
+        highLevelAction: HighLevelAction = formInputValueList.get()
         appEventDTOList: list[AppEventDTO] = []
         # Get the input value list from the form input value DTO
-        for inputValue in formInputValue.getInputValueList():
+        for inputValue in highLevelAction.getInputValueList():
             xpath: str = inputValue.getXpath()
             value: str = inputValue.getValue()
             category: int = inputValue.getCategory()
             appEventDTOList.append(AppEventDTO(xpath=xpath, value=value, category=category))
-        pageDom = formInputValue.getPageDom()
-        formXPath = formInputValue.getFormXPath()
-        # Create a FormInputValue object and append it to the list
-        formInputValueDTOs.append(FormInputValueDTO(app_event_dto_list=appEventDTOList, page_dom=pageDom, form_xpath=formXPath))
+        pageDom = highLevelAction.getPageDom()
+        formXPath = highLevelAction.getFormXPath()
+        # Create a HighLevelAction object and append it to the list
+        highLevelActionDTOs.append(HighLevelActionDTO(app_event_dto_list=appEventDTOList, page_dom=pageDom, form_xpath=formXPath))
         formInputValueList.next()
-    return formInputValueDTOs
+    return highLevelActionDTOs
 
 
-def _mappingFormInputValueListFrom(formInputValueDTOs: [FormInputValueDTO]) -> FormInputValueList:
+def _mappingFormInputValueListFrom(highLevelActionDTOs: [HighLevelActionDTO]) -> FormInputValueList:
     # TODO: refector this
-    formInputValueList: list[FormInputValue] = []
-    for formInputValueDTO in formInputValueDTOs:
+    highLevelActionList: list[HighLevelAction] = []
+    for highLevelActionDTO in highLevelActionDTOs:
         inputValueList: list[AppEvent] = []
         # Get the input value list from the form input value DTO
-        appEventDTOList: [AppEventDTO] = formInputValueDTO.getInputValueDTOList()
-        for inputValueDTO in appEventDTOList:
-            xpath:str = inputValueDTO.getXpath()
-            value:str = inputValueDTO.getValue()
-            category:int = inputValueDTO.getCategory()
+        appEventDTOList: [AppEventDTO] = highLevelActionDTO.getInputValueDTOList()
+        for appEventDTO in appEventDTOList:
+            xpath:str = appEventDTO.getXpath()
+            value:str = appEventDTO.getValue()
+            category:int = appEventDTO.getCategory()
             inputValueList.append(AppEvent(xpath=xpath, value=value, category=category))
-        pageDom = formInputValueDTOs.getPageDom()
-        formXPath = formInputValueDTOs.getFormXPath()
-        # Create a FormInputValue object and append it to the list
-        formInputValueList.append(FormInputValue(*inputValueList, page_dom=pageDom, form_xpath=formXPath))
-    return FormInputValueList(formInputValueList)
+        pageDom = highLevelActionDTOs.getPageDom()
+        formXPath = highLevelActionDTOs.getFormXPath()
+        # Create a HighLevelAction object and append it to the list
+        highLevelActionList.append(HighLevelAction(*inputValueList, page_dom=pageDom, form_xpath=formXPath))
+    return FormInputValueList(highLevelActionList)
 
 
 def mappingDirectiveFrom(directiveDTO: DirectiveDTO) -> Directive:
@@ -83,4 +83,4 @@ def mappingDirectiveDTOFrom(directive: Directive) -> DirectiveDTO:
 
     return DirectiveDTO(url=directive.getUrl(), dom=directive.getDom(), formXPath=directive.getFormXPath(),
                         appEventDTOs=appEventDTOs, codeCoverageDTOs=_mappingCodeCoverageDTOsFrom(directive.getCodeCoverages()),
-                        formInputValueDTOs=_mappingFormInputValueDTOsFrom(directive.getFormInputValueList()))
+                        highLevelActionDTOs=_mappingHighLevelActionDTOsFrom(directive.getFormInputValueList()))
