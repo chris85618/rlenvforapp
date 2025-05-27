@@ -271,7 +271,7 @@ class AIGuideTargetPagePort(ITargetPagePort):
     #     return javaObjectHighLevelActionDTOBuilder.build()
 
     def _createJavaObjectHighLevelActionListDTO(self, highLevelActionDTOList: [HighLevelActionDTO]):
-        javaObjectHighLevelActionListDTOBuilder = self._javaObjectPy4JLearningPool.getFormInputValueListDTOBuilder()
+        javaObjectHighLevelActionListDTOBuilder = self._javaObjectPy4JLearningPool.getActionSequenceListDTOBuilder()
         for highLevelActionDTO in highLevelActionDTOList:
             javaObjectHighLevelActionListDTOBuilder.addFormInputValue(highLevelActionDTO)
         return javaObjectHighLevelActionListDTOBuilder.build()
