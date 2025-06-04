@@ -1,11 +1,13 @@
 import json
 import os
+import sys
 import re
 import time
 from urllib.parse import urlparse
 
 from dependency_injector.wiring import inject
 from py4j.java_gateway import CallbackServerParameters, GatewayParameters, JavaGateway
+from py4j.protocol import Py4JError
 
 from RLEnvForApp.adapter.targetPagePort.FileManager import FileManager
 from RLEnvForApp.adapter.targetPagePort.ITargetPagePort import ITargetPagePort
@@ -59,9 +61,17 @@ class AIGuideTargetPagePort(ITargetPagePort):
         self._javaObjectPy4JLearningPool.shutdown()
 
     def waitForTargetPage(self):
+        self._javaObjectPy4JLearningPool.setAgentDone(True)
         Logger().info("Waiting for target page")
-        while self._javaObjectPy4JLearningPool.isLearningTaskDTOQueueEmpty():
-            time.sleep(1)
+        try:
+            while self._javaObjectPy4JLearningPool.isLearningTaskDTOQueueEmpty():
+                time.sleep(1)
+        except Py4JError:
+            # if AIGuide closed
+            self._javaObjectPy4JLearningPool.shutdown()
+            sys.exit(0)
+
+        self._javaObjectPy4JLearningPool.setAgentDone(False)
         self.pullTargetPage()
 
     def pullTargetPage(self):
