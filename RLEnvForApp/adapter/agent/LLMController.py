@@ -127,7 +127,9 @@ class LLMController:
     def play(self):
         while True:
             if len(self._repository.findAll()) == 0:
-                self.__target_page_port.waitForTargetPage()
+                if self.__target_page_port.waitForTargetPage() == False:
+                    self._logger.info("No any more target page. End the test.")
+                    break
             begin_time = time.time_ns()
             self.__aut_controller.resetAUTServer(True)
             self._episodeIndex += 1
