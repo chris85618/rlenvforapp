@@ -1,6 +1,17 @@
 from RLEnvForApp.domain.llmService.ILlmService import ILlmService
 from openai import OpenAI
 
+system_prompt = ['You are an AI web crawler assistant. '
+                 'Follow the user requirements carefully '
+                 'and The user will prompt you for the DOM differences '
+                 'before and after submitting the web form. '
+                 'Please answer whether the form was submitted successfully. '
+                 'Please only say yes or no.',
+                 'You are an AI web crawler assistant.'
+                 'Follow the user requirements carefully '
+                 'and The user will give you some web elements.'
+                 'Please answer it is a form submitting button.'
+                 'Please only say yes or no.']
 
 class ChatGPTService(ILlmService):
     client = OpenAI(api_key='****')
