@@ -135,6 +135,8 @@ class SeleniumCrawler(ICrawler):
                     chrome_options = webdriver.chrome.options.Options()
                     chrome_options.add_argument('--no-sandbox')  # root permission
                     chrome_options.add_argument('--disable-dev-shm-usage')
+                    chrome_options.add_argument("--disable-features=PasswordLeakDetection,PasswordCheck,AccountConsistency,SafeBrowsingEnhancedProtection")
+                    chrome_options.add_argument("--disable-default-apps")
                     # chrome_options.add_argument('--headless')  # no GUI display
                     driver = webdriver.Chrome(chrome_options=chrome_options)
                 elif browserName == "Firefox":
