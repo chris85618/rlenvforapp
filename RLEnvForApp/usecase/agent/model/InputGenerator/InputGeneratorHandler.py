@@ -18,6 +18,9 @@ class InputGeneratorHandler:
 
     def get_response(self, dom, form_xpath:str):
         formatted_form_xpath = XPathFormatter.format(form_xpath)
-        test_combination_output_response:TestCombinationOutputResponse = self.llm_service.get_structured_response(dom=dom, form_xpath=formatted_form_xpath)
+        for _ in range(10):
+            test_combination_output_response:TestCombinationOutputResponse = self.llm_service.get_structured_response(dom=dom, form_xpath=formatted_form_xpath)
+            if test_combination_output_response is not None:
+                break
         high_level_action_list = HighLevelActionList.fromTestCombinationOutputResponse(test_combination_output_response, page_dom=dom, form_xpath=formatted_form_xpath)
         return high_level_action_list

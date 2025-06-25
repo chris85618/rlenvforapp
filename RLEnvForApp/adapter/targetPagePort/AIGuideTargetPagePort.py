@@ -32,6 +32,7 @@ from RLEnvForApp.usecase.targetPage.get import (GetAllTargetPageInput, GetAllTar
 from RLEnvForApp.usecase.targetPage.remove import (RemoveTargetPageInput, RemoveTargetPageOutput,
                                                    RemoveTargetPageUseCase)
 from RLEnvForApp.usecase.targetPage.HighLevelActionList import HighLevelActionList
+from RLEnvForApp.domain.targetPage.HighLevelAction import HighLevelAction
 
 
 class AIGuideTargetPagePort(ITargetPagePort):
@@ -108,13 +109,16 @@ class AIGuideTargetPagePort(ITargetPagePort):
             isFirst = False
 
     def pushTargetPage(self, target_page_id: str, episode_handler_id: str, highLevelActionList: HighLevelActionList):
-        directive_dto = self._createDirective(
-            targetPageId=target_page_id, episodeHandlerId=episode_handler_id, highLevelActionList=highLevelActionList)
-        target_page_dto: TargetPageDTO = self._getTargetPage(targetPageId=target_page_id)
+        while highLevelActionList.is_done() == False:
+            highLevelAction = highLevelActionList.get()
+            directive_dto = self._createDirective(
+                targetPageId=target_page_id, episodeHandlerId=episode_handler_id, highLevelAction=highLevelAction)
+            target_page_dto: TargetPageDTO = self._getTargetPage(targetPageId=target_page_id)
 
-        self._javaObjectPy4JLearningPool.enQueueLearningResultDTO(
-            self._createJavaObjectLearningResultDTO(target_page_dto.getTaskID(), directive_dto))
-        self._saveTargetPageToHtmlSet(episode_handler_id, directive_dto)
+            self._javaObjectPy4JLearningPool.enQueueLearningResultDTO(
+                self._createJavaObjectLearningResultDTO(target_page_dto.getTaskID(), directive_dto))
+            self._saveTargetPageToHtmlSet(episode_handler_id, directive_dto)
+            highLevelActionList.next()
         if not self._isTraining:
             self._removeTargetPage(target_page_id)
 
@@ -168,19 +172,19 @@ class AIGuideTargetPagePort(ITargetPagePort):
         getTargetPageUseCase.execute(input=getTargetPageInput, output=getTargetPageOutput)
         return getTargetPageOutput.getTargetPageDTO()
 
-    def _createDirective(self, targetPageId: str, episodeHandlerId: str, highLevelActionList: HighLevelActionList):
+    def _createDirective(self, targetPageId: str, episodeHandlerId: str, highLevelAction: HighLevelAction):
         createDirectiveUseCase = CreateDirectiveUseCase.CreateDirectiveUseCase()
         createDirectiveInput = CreateDirectiveInput.CreateDirectiveInput(
-            targetPageId=targetPageId, episodeHandlerId=episodeHandlerId, highLevelActionList=highLevelActionList)
+            targetPageId=targetPageId, episodeHandlerId=episodeHandlerId)
         createDirectiveOutput = CreateDirectiveOutput.CreateDirectiveOutput()
-        createDirectiveUseCase.execute(createDirectiveInput, createDirectiveOutput)
+        createDirectiveUseCase.execute(createDirectiveInput, createDirectiveOutput, highLevelAction=highLevelAction)
 
         return createDirectiveOutput.getDirectiveDTO()
 
     def _getEpisodeHandlerDTO(self, episodeHandlerId: str) -> EpisodeHandlerDTO:
         usecase = GetEpisodeHandlerUseCase.GetEpisodeHandlerUseCase()
         input = GetEpisodeHandlerInput.GetEpisodeHandlerInput(episodeHandlerId=episodeHandlerId)
-        output = GetEpisodeHandlerOutput.GetEpisodeHandlerOutput()
+        output = GetEpisodeHandlerOutput.GetEpisodeHandlerOutput() 
 
         usecase.execute(input=input, output=output)
         return output.getEpisodeHandlerDTO()
@@ -261,9 +265,7 @@ class AIGuideTargetPagePort(ITargetPagePort):
         # set original code coverage
         javaObjectLearningResultDTOBuilder.setOriginalCodeCoverageVector(
             javaObjectLearningTaskDTO.getCodeCoverageVector())
-        # set form input value
-        javaObjectHighLevelActionListDTO = self._createJavaObjectHighLevelActionListDTO(directiveDTO.getHighLevelActionDTOs())
-        javaObjectLearningResultDTOBuilder.setFormInputValueList(javaObjectHighLevelActionListDTO)
+
         javaObjectLearningResultDTOBuilder.setDone(False)
         return javaObjectLearningResultDTOBuilder.build()
 

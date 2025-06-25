@@ -76,11 +76,13 @@ def mappingDirectiveFrom(directiveDTO: DirectiveDTO) -> Directive:
                      highLevelActionList=_mappingHighLevelActionListFrom(directiveDTO.getHighLevelActionDTOs()))
 
 
-def mappingDirectiveDTOFrom(directive: Directive) -> DirectiveDTO:
+def mappingDirectiveDTOFrom(directive: Directive, highLevelAction: HighLevelAction=None) -> DirectiveDTO:
     appEventDTOs: [AppEventDTO] = []
     for appEvent in directive.getAppEvents():
         appEventDTOs.append(AppEventDTOMapper.mappingAppEventDTOFrom(appEvent=appEvent))
 
+    if highLevelAction is not None:
+        appEventDTOs = highLevelAction.getAppEventList()
+
     return DirectiveDTO(url=directive.getUrl(), dom=directive.getDom(), formXPath=directive.getFormXPath(),
-                        appEventDTOs=appEventDTOs, codeCoverageDTOs=_mappingCodeCoverageDTOsFrom(directive.getCodeCoverages()),
-                        highLevelActionDTOs=_mappingHighLevelActionDTOsFrom(directive.getHighLevelActionList()))
+                        appEventDTOs=appEventDTOs, codeCoverageDTOs=_mappingCodeCoverageDTOsFrom(directive.getCodeCoverages()))

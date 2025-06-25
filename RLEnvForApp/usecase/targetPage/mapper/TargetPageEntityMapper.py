@@ -5,9 +5,10 @@ from RLEnvForApp.usecase.environment.state.mapper import CodeCoverageEntityMappe
 from RLEnvForApp.usecase.targetPage.entity import AppEventEntity, TargetPageEntity
 from RLEnvForApp.usecase.targetPage.entity.DirectiveEntity import DirectiveEntity
 from RLEnvForApp.usecase.targetPage.mapper import AppEventEntityMapper, DirectiveEntityMapper
+from RLEnvForApp.domain.targetPage.HighLevelAction import HighLevelAction
 
 
-def mappingTargetPageEntityFrom(targetPage: TargetPage.TargetPage):
+def mappingTargetPageEntityFrom(targetPage: TargetPage.TargetPage, highLevelAction:HighLevelAction = None):
     appEventEntities: [AppEventEntity.AppEventEntity] = []
     for appEvent in targetPage.getAppEvents():
         appEventEntities.append(AppEventEntityMapper.mappingAppEventEntityFrom(appEvent))
@@ -15,7 +16,7 @@ def mappingTargetPageEntityFrom(targetPage: TargetPage.TargetPage):
     directiveEntities: [DirectiveEntity] = []
     for directive in targetPage.getDirectives():
         directiveEntities.append(
-            DirectiveEntityMapper.mappingDirectiveEntityFrom(directive=directive))
+            DirectiveEntityMapper.mappingDirectiveEntityFrom(directive=directive, highLevelAction=highLevelAction))
     return TargetPageEntity.TargetPageEntity(id=targetPage.getId(),
                                              targetUrl=targetPage.getTargetUrl(),
                                              rootUrl=targetPage.getRootUrl(),
@@ -27,11 +28,13 @@ def mappingTargetPageEntityFrom(targetPage: TargetPage.TargetPage):
                                              directiveEntities=directiveEntities)
 
 
-def mappingTargetPageFrom(targetPageEntity: TargetPageEntity):
-    appEvents: [AppEvent] = []
-    for appEventEntity in targetPageEntity.getAppEventEntities():
-        appEvents.append(AppEventEntityMapper.mappingAppEventFrom(appEventEntity=appEventEntity))
-
+def mappingTargetPageFrom(targetPageEntity: TargetPageEntity, highLevelAction: HighLevelAction = None):
+    if highLevelAction is not None:
+        appEvents: [AppEvent] = highLevelAction.getAppEventList()
+    else:
+        appEvents: [AppEvent] = []
+        for appEventEntity in targetPageEntity.getAppEventEntities():
+            appEvents.append(AppEventEntityMapper.mappingAppEventFrom(appEventEntity=appEventEntity))
     directives: [Directive] = []
     for directiveEntity in targetPageEntity.getDirectiveEntities():
         directives.append(DirectiveEntityMapper.mappingDirectiveFrom(

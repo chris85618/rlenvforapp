@@ -17,6 +17,7 @@ from RLEnvForApp.usecase.repository.EpisodeHandlerRepository import EpisodeHandl
 from RLEnvForApp.usecase.repository.TargetPageRepository import TargetPageRepository
 from RLEnvForApp.usecase.targetPage.create import CreateDirectiveInput, CreateDirectiveOutput
 from RLEnvForApp.usecase.targetPage.mapper import DirectiveDTOMapper, TargetPageEntityMapper
+from RLEnvForApp.domain.targetPage.HighLevelAction import HighLevelAction
 
 
 class CreateDirectiveUseCase:
@@ -32,9 +33,10 @@ class CreateDirectiveUseCase:
         self.__input_type = PromptModelDirector.classes
 
     def execute(self, input: CreateDirectiveInput.CreateDirectiveInput,
-                output: CreateDirectiveOutput.CreateDirectiveOutput):
+                output: CreateDirectiveOutput.CreateDirectiveOutput,
+                highLevelAction: HighLevelAction = None):
         targetPageEntity = self._targetPageRepository.findById(input.getTargetPageId())
-        targetPage = TargetPageEntityMapper.mappingTargetPageFrom(targetPageEntity=targetPageEntity)
+        targetPage = TargetPageEntityMapper.mappingTargetPageFrom(targetPageEntity=targetPageEntity, highLevelAction=highLevelAction)
         targetEpisodeHandlerEntity = self._episodeHandlerRepository.findById(
             input.getEpisodeHandlerId())
         episodeEpisodeHandler = EpisodeHandlerEntityMapper.mappingEpisodeHandlerForm(
@@ -76,6 +78,6 @@ class CreateDirectiveUseCase:
         ), formXPath=targetPage.getFormXPath(), appEvents=appEvents, codeCoverages=codeCoverages, highLevelActionList=input.getHighLevelActionList())
         targetPage.appendDirective(directive=directive)
         self._targetPageRepository.update(
-            TargetPageEntityMapper.mappingTargetPageEntityFrom(targetPage=targetPage))
+            TargetPageEntityMapper.mappingTargetPageEntityFrom(targetPage=targetPage, highLevelAction=highLevelAction))
 
-        output.setDirectiveDTO(DirectiveDTOMapper.mappingDirectiveDTOFrom(directive=directive))
+        output.setDirectiveDTO(DirectiveDTOMapper.mappingDirectiveDTOFrom(directive=directive, highLevelAction=highLevelAction))

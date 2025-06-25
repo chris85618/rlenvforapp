@@ -66,12 +66,15 @@ def _mappingHighLevelActionListFrom(highLevelActionEntities: [HighLevelActionEnt
     return HighLevelActionList(highLevelActionList)
 
 
-def mappingDirectiveEntityFrom(directive: Directive) -> DirectiveEntity:
+def mappingDirectiveEntityFrom(directive: Directive, highLevelAction:HighLevelAction = None) -> DirectiveEntity:
     appEventEntities: [AppEventEntity] = []
     for appEvent in directive.getAppEvents():
         appEventEntities.append(AppEventEntityMapper.mappingAppEventEntityFrom(appEvent=appEvent))
+    newList = []
+    newList.append(highLevelAction)
+    highLevelActionList: HighLevelActionList = HighLevelActionList(newList)
     return DirectiveEntity(url=directive.getUrl(), dom=directive.getDom(), formXPath=directive.getFormXPath(), appEventEntities=appEventEntities, codeCoverageEntities=_mappingCodeCoverageEntitiesFrom(directive.getCodeCoverages()),
-                           highLevelActionEntities=_mappingHighLevelActionEntitiesFrom(directive.getHighLevelActionList()))
+                           highLevelActionEntities=_mappingHighLevelActionEntitiesFrom(highLevelActionList))
 
 
 def mappingDirectiveFrom(directiveEntity: DirectiveEntity) -> Directive:

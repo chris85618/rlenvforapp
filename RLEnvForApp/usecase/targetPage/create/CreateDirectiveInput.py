@@ -1,7 +1,7 @@
 from RLEnvForApp.usecase.targetPage.HighLevelActionList import HighLevelActionList
 
 class CreateDirectiveInput:
-    def __init__(self, targetPageId: str, episodeHandlerId: str, highLevelActionList: HighLevelActionList):
+    def __init__(self, targetPageId: str, episodeHandlerId: str, highLevelActionList: HighLevelActionList=None):
         self._targetPageId = targetPageId
         self._episodeHandlerId = episodeHandlerId
         self._highLevelActionList = highLevelActionList
