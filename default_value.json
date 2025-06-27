@@ -77,6 +77,8 @@
       }
     }
   },
+  "spring_petclinic_with_no_coverage": {
+  },
   "mern_forum": {
     "http://localhost:3001/signin": {
       "/html/body/div/section/main/section/form/div[1]/div/div[2]/input": {
