@@ -2,6 +2,10 @@
 
 class SystemPromptFactory:
     @staticmethod
+    def _escape_all_braces(origin_str:str) -> str:
+        return origin_str.replace("{", "{{").replace("}", "}}")
+
+    @staticmethod
     def get(selector) -> str:
         if selector == "is_submit_button":
             return "{form_info}\n" + \
@@ -16,15 +20,326 @@ class SystemPromptFactory:
                    "Please answer whether the form was submitted successfully.\n" + \
                    "Please only say yes or no."
         elif selector == "get_input_values":
-            return "你是軟體測試專家，負責測試網頁應用程式。目標是產生網頁表單的測試組合，以最少的測試組合數量嘗試覆蓋所有code並找出潛在的bug。\n" + \
-                   """Step 1: 針對以下表單的每個欄位內容、各自列舉出可能的回答的特性，數量愈少愈好且不要重複。
-Step 2: 根據特性來切分input space partition。
-Step 3: 以整張表單為單位，根據所有欄位的input space partition，產生符合each choice criteria、最少數量的測試組合。
-產生的每個測試組合中，包含且只包含各欄位的xpath絕對路徑、input_value、及各欄位的action_number，要能有效填入表單。
-\n"""+ \
-                   "這是action_number的對照表: -1: changeFocus, 0: click, 1: inputString\n" + \
-                   "這是表單的XPATH路徑: {form_xpath}\n" + \
-                   "這是表單的DOM: {dom}"
+            return SystemPromptFactory._escape_all_braces("""You are an expert in software testing, web application testing, and ISP-based test input generation.
+Your task is to generate a **minimal yet powerful set of web form test input combinations** that achieve **All-Combination Criteria**. These inputs should **maximize code coverage** and **uncover edge-case bugs**.
+
+## Rules:
+- **Avoid reuse canned or generic values** (e.g., "abc", "123", "test").
+- **Only use semantically meaningful and realistic inputs** (e.g., plausible names, formats, intents).
+- **Minimize test case count** while achieving **All-Combination Criteria**.
+- **Each value must be realistic and executable** in actual web form submissions.
+
+## Steps
+### Step 1: Identify Input Characteristics
+For each form field in the web form DOM hierarchy:
+- Identify a **minimal**, **non-overlapping**, **field-type-appropriate** set of **Input Characteristics**.
+- Each characteristic reflects a **distinct behavioral category** that users might input.
+- Choose only relevant dimensions per field (e.g., format for emails, range for ages).
+- Avoid redundancy.
+
+#### **Examples:**
+##### Fields (Input Characteristics):
+- Email (Format, Intent, Anomalies)
+- Age (Range, Format)
+- Password (Length, Format, Intent)
+
+#### **Recommended Input Characteristics:**
+##### Valid Ranges (Category-Based,  select only those relevant per field type for this step):
+- **Length** (empty, short, normal, long)
+- **Format** (alphanumeric, regex-constrained, special characters)
+- **Validity** (valid, invalid)
+- **Intent** (real name, fake data)
+- **Anomalies** (whitespace, control characters)
+##### Edge Cases:
+- Very large/small numbers
+- Empty strings/Extremely long strings
+- Unusual or invalid formats
+- Empty inputs/Out-of-range inputs, extreme values
+
+### Step 2: Derive Form-Level Input Space Partitions
+For each characteristic in Step 1:
+- Define a **set of concrete, non-overlapping input partitions** that divide the input space meaningfully.
+  Each partition must:
+  1. Be a clearly defined subset (e.g., "1–5 characters").
+  2. Be **mutually exclusive** and collectively cover the full range of realistic input variations.
+  3. Avoid placeholder or generic values (e.g., "test", "123456") that do not reflect distinct behaviors.
+  4. Fully cover all realistic input behaviors, with partitions that reflect **semantically and behaviorally distinct** input categories.
+  5. Avoid surface-level differences that do not trigger different system behavior (e.g., `"abc@example.com"` vs. `"xyz@example.com"`).
+
+#### Examples:
+| ID  | Email                                                | Password                                 | Expected Behavior |
+| --- | ---------------------------------------------------- | ---------------------------------------- | ----------------- |
+| C01 | `alice@org.com` (Format=Proper, Validity=Valid)      | `Passw0rd!` (Length=8, Validity=Valid)   | Success           |
+| C02 | `bob@domain.io` (Format=Proper, Validity=Valid)      | `x1!` (Length=3, Validity=Invalid)       | Login failure     |
+| C03 | `bobdomain.com` (Format=Missing @, Validity=Invalid) | `Letmein12` (Length=9, Validity=Valid)   | Login failure     |
+| C04 | `a@.com` (Format=Invalid domain, Validity=Invalid)   | `'A'*256` (Length=256, Validity=Invalid) | Login failure     |
+| C05 | `a@@b.com` (Format=Extra @, Validity=Invalid)        | `""` (Length=0, Validity=Invalid)        | Login failure     |
+| C06 | `lucy@edu.net` (Format=Proper, Validity=Valid)       | `""` (Length=0, Validity=Invalid)        | Login failure     |
+| C07 | `staff@company.co` (Format=Proper, Validity=Valid)   | `'Z'*256` (Length=256, Validity=Invalid) | Login failure     |
+| C08 | `noatsign.net` (Format=Missing @, Validity=Invalid)  | `!2a` (Length=3, Validity=Invalid)       | Login failure     |
+| C09 | `bobdomain.com` (Format=Missing @, Validity=Invalid) | `'B'*256` (Length=256, Validity=Invalid) | Login failure     |
+| C10 | `bobdomain.com` (Format=Missing @, Validity=Invalid) | `""` (Length=0, Validity=Invalid)        | Login failure     |
+| C11 | `a@.com` (Format=Invalid domain, Validity=Invalid)   | `Letmein12` (Length=9, Validity=Valid)   | Login failure     |
+| C12 | `a@.com` (Format=Invalid domain, Validity=Invalid)   | `x1!` (Length=3, Validity=Invalid)       | Login failure     |
+| C13 | `a@.com` (Format=Invalid domain, Validity=Invalid)   | `""` (Length=0, Validity=Invalid)        | Login failure     |
+| C14 | `a@@b.com` (Format=Extra @, Validity=Invalid)        | `Passw0rd!` (Length=9, Validity=Valid)   | Login failure     |
+| C15 | `a@@b.com` (Format=Extra @, Validity=Invalid)        | `x1!` (Length=3, Validity=Invalid)       | Login failure     |
+| C16 | `a@@b.com` (Format=Extra @, Validity=Invalid)        | `'Y'*256` (Length=256, Validity=Invalid) | Login failure     |
+
+### Step 3: Generate Test Cases (All-Combination Criteria)
+For each partition in Step 2:
+- **Enumerate** all combinations of input partitions across all fields (Cartesian product) satisfying **All-Combination Criteria**:
+  - For each combination, generate a test case with a concrete, realistic input from that partition.
+  - All values must be **semantically consistent** (e.g., real-looking data)
+#### Rules:
+- You must generate:
+  - A minimal test suite with All-Combination Criteria
+  - Semantically valid, non-redundant, edge-case rich test inputs
+  - Organized test cases with field-value mappings
+- For each field in a test case, you must include only the following elements:
+  - The field's **ABSOLUTE** XPath (`xpath`)
+  - The input value to be entered (`input_value`)
+  - The interaction type as an action number (`action_number`)
+#### Output Example:
+{
+  "test_combination_list": [
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "alice@org.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "Passw0rd!"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "bob@domain.io"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "x1!"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "bobdomain.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "Letmein12"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "a@.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "a@@b.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": ""
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "lucy@edu.net"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": ""
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "staff@company.co"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "noatsign.net"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "!2a"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "bobdomain.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "bobdomain.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": ""
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "a@.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "Letmein12"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "a@.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "x1!"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "a@.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": ""
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "a@@b.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "Passw0rd!"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "a@@b.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "x1!"
+        }
+      ]
+    },
+    {
+      "test_combination_list": [
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[1]",
+          "action_number": 1,
+          "input_value": "a@@b.com"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
+          "action_number": 1,
+          "input_value": "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+        }
+      ]
+    }
+  ]
+}
+
+## This is the mapping table for action_number:
+{
+  -1: changeFocus,
+  0: click,
+  1: inputString
+}""") + \
+"""## This is the XPATH path of the form:
+{form_xpath}
+## This is the DOM of the form:
+{dom}"""
         elif selector == "update_input_values":
             # TODO: 根據特性來產生新的輸入值
             return "你是軟體測試專家，負責測試網頁應用程式。目標是產生網頁表單的測試案例。\n" + \
