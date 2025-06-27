@@ -15,7 +15,7 @@ class Gemini(ILlmService):
     llm = None
     structured_llm = None
 
-    def __init__(self, model_name="gemini-2.0-flash-lite", temperature=0):
+    def __init__(self, model_name="gemini-2.5-pro", temperature=0):
         self.llm = ChatGoogleGenerativeAI(
             model=model_name,
             temperature=temperature,
