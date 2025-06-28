@@ -100,6 +100,29 @@ For each partition in Step 2:
   - The field's **ABSOLUTE** XPath (`xpath`)
   - The input value to be entered (`input_value`)
   - The interaction type as an action number (`action_number`)
+##### XPath Generation Guidelines
+- To ensure correctness and prevent XPath-related errors, all generated XPath expressions must conform to the following guidelines:
+- Each XPath expression **must be syntactically valid**, using only legal HTML tag names and well-formed bracket notation:
+  - [Allowed] Valid example: `/HTML[1]/BODY[1]/DIV[2]/FORM[1]/INPUT[3]`
+  - [Disallowed] Examples of invalid syntax:
+    - `/HTML[1]/BODY[1]/DIV[3[1]` (unbalanced/malformed brackets)
+    - `/HTML[1]/BODY[1]/DIV[[1]]`, `/HTML[1]/BODY[1]/DIV[]`, `/HTML[1]/BODY[1]/DIV[abc]` (nested, empty, or non-numeric indices)
+    - `/HTML[1]/BODY[1DIV[1]` (missing '/' between nodes, or concatenated element names)
+    - Any expression containing illegal characters or unsupported punctuation
+  - [Allowed] Each tag must be followed by **exactly one numeric index enclosed in balanced square brackets** (e.g., `DIV[1]`)
+- Each XPath must:
+  - Start with `{form_xpath}`, the absolute XPath of the `<form>` element
+  - Reference **only elements explicitly present in `{dom}`**, which defines the internal structure of the form
+  - Target only **interactive input elements** that accept user input, such as:
+    - `<input>` (any type, e.g., text, email, password, number, etc.)
+    - `<textarea>`
+    - `<select>`
+  - Exclude non-interactive tags (e.g., `<button>`, `<datalist>`, `<output>`) should be excluded **unless explicitly marked as user-editable input fields**
+- [Important] Never fabricate, infer, or hallucinate XPath expressions:
+  - If an element does **not** exist in `{dom}`, omit it.
+  - Never guess sibling positions or fabricate index values.
+- Strictly meticulously validate XPath structure using the following regular expression (required for well-formed expressions): `^(/[A-Za-z]+\\[\\d+\\])+$`
+  - Ensures each node starts with a slash `/`, followed by a valid tag and an index in brackets (e.g., `[1]`)
 #### Output Example:
 {
   "test_combination_list": [
