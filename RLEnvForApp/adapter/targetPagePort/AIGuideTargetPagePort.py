@@ -64,13 +64,16 @@ class AIGuideTargetPagePort(ITargetPagePort):
     def waitForTargetPage(self):
         self._javaObjectPy4JLearningPool.setPauseAgent(True)
         Logger().info("Waiting for target page")
-        try:
-            while self._javaObjectPy4JLearningPool.isLearningTaskDTOQueueEmpty():
-                time.sleep(1)
-        except Py4JError:
-            # if AIGuide closed
-            self._javaObjectPy4JLearningPool.shutdown()
-            return False
+
+        while self._javaObjectPy4JLearningPool.isLearningTaskDTOQueueEmpty():
+            time.sleep(1)
+        # try:
+        #     while self._javaObjectPy4JLearningPool.isLearningTaskDTOQueueEmpty():
+        #         time.sleep(1)
+        # except Py4JError:
+        #     # if AIGuide closed
+        #     self._javaObjectPy4JLearningPool.shutdown()
+        #     return False
 
         self._javaObjectPy4JLearningPool.setPauseAgent(False)
         self.pullTargetPage()
