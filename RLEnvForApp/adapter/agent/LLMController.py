@@ -155,8 +155,11 @@ class LLMController:
                     self._remove_target_page()
                 break
 
+            # Get Selected XPath List
+            app_element_list = self.__aut_operator.getAllSelectedAppElements()
+            field_xpath_list = [selected_app_element.getXpath() for selected_app_element in app_element_list]
             state = self.__aut_operator.getState()
-            self._inputValueHandler.add(target_page_url, self.__target_form_xpath, Dom(state.getDOM()))
+            self._inputValueHandler.add(target_page_url, self.__target_form_xpath, Dom(state.getDOM()), field_xpath_list)
             # Add valid input values if the elements have default values.
             if self._inputValueHandler.is_first(target_page_url, self.__target_form_xpath):
                 if self._inputValueHandler.is_done(target_page_url, self.__target_form_xpath) == False:

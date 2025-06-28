@@ -14,12 +14,16 @@ class InputGeneratorHandler:
     def __init__(self, llm_service: ILlmService = Provide[EnvironmentDIContainers.llmService]):
         self.llm_service = LlmTemplateService()
         self.llm_service.set_llm(llm_service)
-        self.llm_service.set_system_prompt(SystemPromptFactory.get("get_input_values"), "dom", "form_xpath")
+        self.llm_service.set_system_prompt(SystemPromptFactory.get("get_input_values"), "dom", "form_xpath", "field_xpaths")
 
-    def get_response(self, dom, form_xpath:str):
+    def get_response(self, dom, form_xpath:str, field_xpath_list:list[str]):
+        # Form XPath
         formatted_form_xpath = XPathFormatter.format(form_xpath)
+        # Field XPath List
+        formatted_field_xpath_list = [XPathFormatter.format(field_xpath) for field_xpath in field_xpath_list]
+        field_xpaths_str = "\n".join([f"- {field_xpath}" for field_xpath in formatted_field_xpath_list])
         for _ in range(10):
-            test_combination_output_response:TestCombinationOutputResponse = self.llm_service.get_structured_response(dom=dom, form_xpath=formatted_form_xpath)
+            test_combination_output_response:TestCombinationOutputResponse = self.llm_service.get_structured_response(dom=dom, form_xpath=formatted_form_xpath, field_xpaths=field_xpath_list)
             if test_combination_output_response is not None:
                 break
         high_level_action_list = HighLevelActionList.fromTestCombinationOutputResponse(test_combination_output_response, page_dom=dom, form_xpath=formatted_form_xpath)
