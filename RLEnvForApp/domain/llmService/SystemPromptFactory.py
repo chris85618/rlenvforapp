@@ -100,6 +100,11 @@ For each partition in Step 2:
   - The field's **ABSOLUTE** XPath (`xpath`)
   - The input value to be entered (`input_value`)
   - The interaction type as an action number (`action_number`)
+- Every generated test case must include a final **form submission action**, either by **clicking a submit-capable element** (e.g., `<button type="submit">`, `<input type="submit">`) or by triggering form submission through other valid user interactions:
+  - The element's **ABSOLUTE** XPath (`xpath`)
+    - It must be a valid interactive element (e.g., `<button type="submit">`, `<input type="submit">`) that exists in the `{dom}`.
+  - Empty string input value (`input_value`)
+  - The interaction type as an action number (`action_number`)
 ##### XPath Generation Guidelines
 - To ensure correctness and prevent XPath-related errors, all generated XPath expressions must conform to the following guidelines:
 - Each XPath expression **must be syntactically valid**, using only legal HTML tag names and well-formed bracket notation:
@@ -117,7 +122,7 @@ For each partition in Step 2:
     - `<input>` (any type, e.g., text, email, password, number, etc.)
     - `<textarea>`
     - `<select>`
-  - Exclude non-interactive tags (e.g., `<button>`, `<datalist>`, `<output>`) should be excluded **unless explicitly marked as user-editable input fields**
+  - Exclude all non-interactive HTML elements (e.g., `<div>`, `<span>`, `<p>`, `<label>`, `<img>`) from input field extraction **unless explicitly marked as user-editable** (e.g., `contenteditable="true"` or other editable attributes).
 - [Important] Never fabricate, infer, or hallucinate XPath expressions:
   - If an element does **not** exist in `{dom}`, omit it.
   - Never guess sibling positions or fabricate index values.
@@ -137,6 +142,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "Passw0rd!"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -151,6 +161,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "x1!"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -165,6 +180,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "Letmein12"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -179,6 +199,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -192,6 +217,11 @@ For each partition in Step 2:
         {
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
+          "input_value": ""
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
           "input_value": ""
         }
       ]
@@ -207,6 +237,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": ""
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -221,6 +256,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -235,6 +275,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "!2a"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -249,6 +294,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -262,6 +312,11 @@ For each partition in Step 2:
         {
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
+          "input_value": ""
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
           "input_value": ""
         }
       ]
@@ -277,6 +332,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "Letmein12"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -291,6 +351,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "x1!"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -304,6 +369,11 @@ For each partition in Step 2:
         {
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
+          "input_value": ""
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
           "input_value": ""
         }
       ]
@@ -319,6 +389,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "Passw0rd!"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -333,6 +408,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "x1!"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     },
@@ -347,6 +427,11 @@ For each partition in Step 2:
           "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/input[2]",
           "action_number": 1,
           "input_value": "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+        },
+        {
+          "xpath": "/html[1]/body[1]/div[1]/main[1]/form[1]/button[1]",
+          "action_number": 0,
+          "input_value": ""
         }
       ]
     }
