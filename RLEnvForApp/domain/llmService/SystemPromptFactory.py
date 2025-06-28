@@ -31,7 +31,7 @@ Your task is to generate a **minimal yet powerful set of web form test input com
 
 ## Steps
 ### Step 1: Identify Input Characteristics
-For each form field in the web form DOM hierarchy:
+For each form field in the web Form DOM hierarchy:
 - Identify a **minimal**, **non-overlapping**, **field-type-appropriate** set of **Input Characteristics**.
 - Each characteristic reflects a **distinct behavioral category** that users might input.
 - Choose only relevant dimensions per field (e.g., format for emails, range for ages).
@@ -102,9 +102,9 @@ For each partition in Step 2:
   - The interaction type as an action number (`action_number`)
 - Every generated test case must include a final **form submission action**, either by **clicking a submit-capable element** (e.g., `<button type="submit">`, `<input type="submit">`) or by triggering form submission through other valid user interactions:
   - The element's **ABSOLUTE** XPath (`xpath`)
-    - It must be a valid interactive element (e.g., `<button type="submit">`, `<input type="submit">`) that exists in the `{dom}`.
+    - It must be a valid interactive element (e.g., `<button type="submit">`, `<input type="submit">`) that exists in the `{Form DOM Hierarchy}`.
   - Empty string input value (`input_value`)
-  - The interaction type as an action number (`action_number`)
+  - The `action_number` specifying the interaction type. You must choose a valid number for this value from the Action Number Mapping. (`action_number`)
 ##### XPath Generation Guidelines
 - To ensure correctness and prevent XPath-related errors, all generated XPath expressions must conform to the following guidelines:
 - Each XPath expression **must be syntactically valid**, using only legal HTML tag names and well-formed bracket notation:
@@ -116,15 +116,15 @@ For each partition in Step 2:
     - Any expression containing illegal characters or unsupported punctuation
   - [Allowed] Each tag must be followed by **exactly one numeric index enclosed in balanced square brackets** (e.g., `DIV[1]`)
 - Each XPath must:
-  - Start with `{form_xpath}`, the absolute XPath of the `<form>` element
-  - Reference **only elements explicitly present in `{dom}`**, which defines the internal structure of the form
+  - Start with `{Form XPath}`, the absolute XPath of the `<form>` element
+  - Reference **only elements explicitly present in `{Form DOM Hierarchy}`**, which defines the internal structure of the form
   - Target only **interactive input elements** that accept user input, such as:
     - `<input>` (any type, e.g., text, email, password, number, etc.)
     - `<textarea>`
     - `<select>`
   - Exclude all non-interactive HTML elements (e.g., `<div>`, `<span>`, `<p>`, `<label>`, `<img>`) from input field extraction **unless explicitly marked as user-editable** (e.g., `contenteditable="true"` or other editable attributes).
 - [Important] Never fabricate, infer, or hallucinate XPath expressions:
-  - If an element does **not** exist in `{dom}`, omit it.
+  - If an element does **not** exist in `{Form DOM Hierarchy}`, omit it.
   - Never guess sibling positions or fabricate index values.
 - Strictly meticulously validate XPath structure using the following regular expression (required for well-formed expressions): `^(/[A-Za-z]+\\[\\d+\\])+$`
   - Ensures each node starts with a slash `/`, followed by a valid tag and an index in brackets (e.g., `[1]`)
@@ -438,15 +438,16 @@ For each partition in Step 2:
   ]
 }
 
-## This is the mapping table for action_number:
+## Required Inputs
+### Action Number Mapping:
 {
   -1: changeFocus,
   0: click,
   1: inputString
 }""") + \
-"""## This is the XPATH path of the form:
+"""### Form XPath:
 {form_xpath}
-## This is the DOM of the form:
+### Form DOM Hierarchy:
 {dom}"""
         elif selector == "update_input_values":
             # TODO: 根據特性來產生新的輸入值
