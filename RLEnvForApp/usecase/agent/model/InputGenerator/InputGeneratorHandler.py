@@ -14,7 +14,7 @@ class InputGeneratorHandler:
     def __init__(self, llm_service: ILlmService = Provide[EnvironmentDIContainers.llmService]):
         self.llm_service = LlmTemplateService()
         self.llm_service.set_llm(llm_service)
-        self.llm_service.set_system_prompt(SystemPromptFactory.get("get_input_values"), "dom")
+        self.llm_service.set_system_prompt(SystemPromptFactory.get("get_input_values"), "dom", "form_xpath")
 
     def get_response(self, dom, form_xpath:str):
         formatted_form_xpath = XPathFormatter.format(form_xpath)
