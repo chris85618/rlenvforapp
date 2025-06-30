@@ -48,7 +48,6 @@ For each **provided field XPath** in the `{Provided Field XPaths}` list:
 - **Length** (empty, short, normal, long)
 - **Format** (alphanumeric, regex-constrained, special characters)
 - **Validity** (valid, invalid)
-- **Intent** (real name, fake data)
 - **Anomalies** (whitespace, control characters)
 ##### Edge Cases:
 - Very large/small numbers
@@ -91,6 +90,7 @@ For each partition in Step 2:
 - **Enumerate** all combinations of input partitions across all fields (Cartesian product) satisfying **All-Combination Criteria**:
   - For each combination, generate a test case with a concrete, realistic input from that partition.
   - All values must be **semantically consistent** (e.g., real-looking data)
+    - If a 'First Name' field is 'John', and a 'Last Name' field is 'Doe', don't combine 'John' with an obviously unrelated 'Age' like '-5').
 #### Rules:
 - You must generate:
   - A minimal test suite with All-Combination Criteria
@@ -105,6 +105,31 @@ For each partition in Step 2:
     - It must be a valid interactive element (e.g., `<button type="submit">`, `<input type="submit">`) that exists in the `{Form DOM Hierarchy}`.
   - Empty string input value (`input_value`)
   - The `action_number` specifying the interaction type. You must choose a valid number for this value from the Action Number Mapping. (`action_number`)
+##### XPath Guidelines
+- Only use the XPath selected from the provided `{provided_xpaths}` list**
+- Do not invent or synthesize new XPath paths.
+- To ensure correctness and prevent XPath-related errors, you must validate each XPath expression against the following rules:
+  1. Each XPath expression must be syntactically valid and match the following regular expression: `^(\/[A-Za-z][A-Za-z0-9_.-]*\[\d+\])+$`
+    This ensures:
+    - Each node must start with a slash `/`.
+    - Each tag name must be legal:
+      - Each tag name must start with a letter (`A–Z` or `a–z`)
+      - Each tag name may contain letters (`A–Z` or `a–z`), digits (`0 - 9`), hyphens (`-`), underscores (`_`), and periods (`.`)
+      - Each tag must be followed by exactly one numeric index enclosed in balanced square brackets (e.g., `DIV[1]`)
+  2. Use well-formed bracket notation:
+    - [Allowed] Valid example:
+      - `/HTML[1]/BODY[1]/DIV[2]/FORM[1]/INPUT[3]`
+    - [Disallowed] Invalid Examples:
+      - `/HTML[1]/BODY[1]/DIV[3[1]` (unbalanced/malformed brackets)
+      - `/HTML[1]/BODY[1]/DIV[[1]]`, `/HTML[1]/BODY[1]/DIV[]`, `/HTML[1]/BODY[1]/DIV[abc]` (nested, empty, or non-numeric indices)
+      - `/HTML[1]/BODY[1DIV[1]` (missing '/' between nodes, or concatenated element names)
+      - Any expression containing illegal characters or unsupported punctuation
+
+  3. The XPath must start with `{form_xpath}`, the absolute XPath of the `<form>` element
+  4. [Important] Never fabricate, infer, or hallucinate XPath expressions:
+    - If an element does **not** exist in `{dom}`, omit it.
+    - Never guess sibling positions or fabricate index values.
+  5. [Important] If any XPath goes wrong, find out the referenced XPath from the provided `{provided_xpaths}` list and fix it.
 #### Output Example:
 {
   "test_combination_list": [
