@@ -22,9 +22,6 @@ class InputGeneratorHandler:
         # Field XPath List
         formatted_field_xpath_list = [XPathFormatter.format(field_xpath) for field_xpath in field_xpath_list]
         field_xpaths_str = "\n".join([f"- {field_xpath}" for field_xpath in formatted_field_xpath_list])
-        for _ in range(10):
-            test_combination_output_response:TestCombinationOutputResponse = self.llm_service.get_structured_response(dom=dom, form_xpath=formatted_form_xpath, field_xpaths=field_xpath_list)
-            if test_combination_output_response is not None:
-                break
+        test_combination_output_response:TestCombinationOutputResponse = self.llm_service.get_structured_response(dom=dom, form_xpath=formatted_form_xpath, field_xpaths=field_xpath_list)
         high_level_action_list = HighLevelActionList.fromTestCombinationOutputResponse(test_combination_output_response, page_dom=dom, form_xpath=formatted_form_xpath)
         return high_level_action_list

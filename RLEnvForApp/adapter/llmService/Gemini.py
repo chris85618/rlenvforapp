@@ -2,6 +2,7 @@
 from RLEnvForApp.domain.llmService.ILlmService import ILlmService
 from RLEnvForApp.domain.llmService.TestCombinationOutputResponse import TestCombinationOutputResponse
 from langchain_google_genai import ChatGoogleGenerativeAI
+from google.api_core.exceptions import GoogleAPIError
 import os
 
 # Google API Key
@@ -24,10 +25,18 @@ class Gemini(ILlmService):
 
     def get_response(self, prompt: str, **kwargs) -> str:
         # TODO: Improve prompt, maybe add system_prompt, etc...
-        response = self.llm.invoke(prompt)
-        return response.content
+        try:
+            response = self.llm.invoke(prompt)
+            if response is not None:
+                return response.content
+        except GoogleAPIError:
+            return None
 
     def get_structured_response(self, prompt: str, **kwargs):
         # TODO: Improve prompt, maybe add system_prompt, etc...
-        response = self.structured_llm.invoke(prompt)
-        return response
+        try:
+            response = self.structured_llm.invoke(prompt)
+            if response is not None:
+                return response
+        except GoogleAPIError:
+            return None
