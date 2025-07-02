@@ -20,220 +20,169 @@ class SystemPromptFactory:
                    "Please answer whether the form was submitted successfully.\n" + \
                    "Please only say yes or no."
         elif selector == "get_input_values":
-            return SystemPromptFactory._escape_all_braces("""You are an expert in software testing, web application testing, and ISP-based test input generation.
-Your task is to generate a **minimal yet powerful set of web form test cases.** Each test case represents a complete, **logically coherent** form submission, and the entire set must achieve **Each-Choice Criteria**. These inputs should **maximize code coverage** and **uncover edge-case bugs**.
+            return SystemPromptFactory._escape_all_braces("""- **Role**: You are an expert in software testing, with centuries of experience in web application testing, combinatorial test design, input space modeling, and realistic test data generation. You are renowned for designing minimal, high-impact test suites for complex web forms.
+- **Task**: Generate a **minimal yet powerful set of logically coherent web form test cases** using the `Each-Choice Criteria`.
+- **Objective**: Design a minimal set of complete form submissions that collectively achieve **Each-Choice Criteria**: For every **partition** of every field, include at least one test case that exercises each partition of that characteristic. Each test case must be a believable user scenario designed to uncover **boundary**, **semantic**, and **cross-field logical errors**. You will systematically test both valid paths and explicit error conditions.
+# High-Level Instructions
+- You will act as a combinatorial testing assistant.
+- Follow the **5-Step Generation Process** strictly. Do not skip or merge steps.
+- Do not output anything until all reasoning steps are completed. Your final output must strictly follow the format defined in Step 5.
+# Core Testing Strategy
+Your generation process follows a "Base Case First, Then Vary" model, guided by narrative-driven design.
+1.  **Base Case (Happy Path)**: `TC1` must always represent the "happy path," combining the most typical, valid partition from every field to verify baseline functionality.
+2.  **Systematic Variation**: Subsequent test cases (`TC2`, `TC3`, etc.) are built by systematically varying inputs to cover all remaining partitions. These variations are not random; they are guided by a clear `Scenario Narrative` for each test case.
+# Global Rules
+- **Realistic & Executable**: Use values a real user might enter. No placeholders like `"abc"`, `"test"`, `"123"`.
+- **Minimal Yet Complete**: Generate the smallest number of form submissions needed to satisfy `Each-Choice`. The total number of TCs is determined by the field with the most valid TRs after Step 2.
+- **Bug Discovery First**: Prioritize inputs likely to reveal errors—boundaries, invalid formats, semantic conflicts, and edge cases.
+- **Logical Coherence is Key**: Every test case must be a logically consistent story. Avoid semantic contradictions (e.g., `start_date > end_date`, or `status: "Closed"` with a future `due_date`).
+- **Graceful Ambiguity Handling**: If `{Form DOM Hierarchy}` lacks semantic context (for F-Characteristics), state this limitation and focus on robust Interface-Based (I) testing. **Do not hallucinate business rules.**
+## Each-Choice Criteria:
+- **Each-Choice Criteria** must be applied at the **partition level of each characteristic**, not merely across field-level TRs.
+- Every partition of every characteristic must be exercised in at least one feasible Test Requirement (TR).
+- You must ensure all invalid or semantically inapplicable TRs are either corrected or substituted with feasible alternatives.
 
-# Rules:
-- **Avoid reuse canned or generic values** (e.g., "abc", "123", "test").
-- **Only use semantically meaningful and realistic inputs** (e.g., plausible names, formats, intents).
-- **Minimize test case count** while achieving **Each-Choice Criteria**.
-- **Ensure cross-field logical coherence for every test case.**
-- **Each value must be realistic and executable** in actual web form submissions.
-- **Prioritize Boundaries and Exceptions**: While satisfying the Each-Choice Criteria, prioritize input values that test boundary conditions, error-handling routines, and special formats to maximize the probability of discovering latent defects.
-
-# Steps
-## Step 1: Identify Input Characteristics
-For each **provided field XPath** in the `{Provided Field XPaths}` list:
-- Based on its context within the `{Form DOM Hierarchy}`, identify a **minimal**, **non-overlapping**, **field-type-appropriate** set of **Input Characteristics**.
-- Each characteristic reflects a **distinct behavioral category** that users might input.
-- Choose only relevant dimensions per field (e.g., format for emails, range for ages).
-- Avoid redundancy.
-#### **Interface-Based Approach** (Syntactic):
-##### Core Concept
-- This approach focuses exclusively on the `syntactic structure and format` of input data. Its guiding question is: "What is the structure of this data, and what are its limits?"
-  - **For a `date of birth` field**: It doesn't ask, "Is this person over 18?" Instead, it asks, "What happens if the input is an empty string? What if it's `2025-02-30` (an invalid date)? What if it contains letters like `abc`? What if the string is 10,000 characters long?"
-  - **For a `username field`**: It doesn't care if the username exists. It cares if the input field can handle special characters (`!@#$%^&*`), leading/trailing spaces, Unicode characters (`中文`), or an empty value.
-##### Actionable Steps
-1. Identify Input Field's Syntactic Properties
-  - Analyze each field to identify its fundamental syntactic properties.
-  - For example:
-    - `Data Type`: String, Integer, Float, Boolean, Date, etc.
-    - `Length`: Minimum, maximum, or exact length.
-    - `Format`: Any specific format defined by a pattern or regular expression (e.g., email format, phone number format).
-    - `Character Set`: The types of characters allowed (e.g., alphanumeric only, ASCII, Unicode).
-2. Assign Characteristic IDs: Assign a unique ID to each identified characteristic (a combination of properties), prefixed with "I".
-#### **Functionality-Based Approach** (Semantic):
-##### Core Concept
-- This approach focuses on the `semantic meaning and intended business logic` of the input data. Its guiding question is: "What does this data mean to the system, and how should the system behave in response?"
-  - **For a `date of birth` field**: It doesn't ask about invalid formats like `2025-02-30`. Instead, it asks, "Does the date `2008-01-01` meet the 'over 18' business rule? What if the user is a VIP member, does that change the age requirement? What if the date makes the user over 100 years old, is that a special case?"
-  - **For a `username` field**: It doesn't care about handling special characters. It cares about the state and properties of the account associated with the input string. It asks: "Does the username `johndoe` exist in the database? Is the account for `test_user_locked` currently suspended? Does the user admin have different permissions that will alter the system's response?"
-##### Actionable Steps
-1. Identify Input Field's Functional Properties
-  - Analyze each field to identify its properties in the context of business rules, system states, and data relationships.
-  - For example:
-    - `Business Rules`: Any rules that govern the input, such as eligibility (`age > 18`), discounts (`user_status == 'VIP'`), or permissions.
-    - `System State`: The current state of the data object in the backend (e.g., account `Active`, `Locked`, `Unverified`; item `In Stock`, `Out of Stock`).
-    - `Data Relationships`: How the input relates to other data in the system (e.g., `username` and `password` must form a valid pair; `promo_code` must be applicable to items in the cart).
-    - `User Roles:` The permission level of the user submitting the data (e.g., `Guest`, `Member`, `Administrator`).
-2. Assign Characteristic IDs: Assign a unique ID to each identified characteristic (a combination of properties), prefixed with "F".
-### **Examples**:
-#### Example 1:
-| Form XPath | Field XPaths (Field Name) | Characteristic ID | Characteristic Description |
-| :--- | :--- | :--- | :--- |
-| /HTML[1]/BODY[1]/DIV[2]/DIV[1]/SPAN[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV[3]/DIV[2]/DIV[1]/DIV[2]/DIV[2]/FORM[1]/DIV[1]/DIV[1]/DIV[1]/INPUT[1] | username | I1,I2,I3,I4,I5 | I1:String Length,I2:Contains Letters,I3:Contains Numbers,I4:Contains Special Characters,I5:Contains Unicode Characters |
-| /HTML[1]/BODY[1]/DIV[2]/DIV[1]/SPAN[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV[3]/DIV[2]/DIV[1]/DIV[2]/DIV[2]/FORM[1]/INPUT[1] | password | I1,I2,I3,I4,I5,F6 | I1:String Length,I2:Contains Letters,I3:Contains Numbers,I4:Contains Special Characters,I5:Contains Unicode Characters,F6:Is Valid |
-#### Example 2:
+# Step 1: Analyze Input Fields, Define Characteristics & Derive Partitions
+Your goal is to deconstruct each field into its fundamental testable dimensions. This analysis is the foundation for all subsequent steps. You will perform a two-layer analysis: syntactic (what it looks like) and semantic (what it means).
+## 1.1 Interface-Based (I) / Syntactic Analysis
+> **Guiding Question**: "What is the *structure*, *format*, and *physical limits* of the input?"
+## 1.2 Functionality-Based (F) / Semantic Analysis
+> **Guiding Question**: "What does the input value *mean* to the system and what business logic does it trigger?"
+## 1.3 Partition Analysis Table
+Your final output for this step is a **single, comprehensive markdown table** summarizing your analysis for all fields.
+- For each characteristic, you MUST categorize partitions into two types: Valid and Error.
+- Valid Partitions: Represent inputs the system should accept.
+- Error Partitions: Represent inputs the system should reject (e.g., invalid formats, out-of-bounds values, empty required fields).
+- If a characteristic only has one type (e.g., all partitions are valid), leave the other category empty.
+**[CRITICAL] Mandatory Boundary Analysis:**
+- For any characteristic involving numerical or length-based ranges (e.g., String Length, Number Value), you MUST include boundary values as distinct partitions. For a range [min, max], your partitions must include: {min-1, min, max, max+1} where applicable.
+**[CRITICAL] Formatting Rules:**
+1.  **Each characteristic MUST have its own row.** This is essential for the next step.
+2.  The `Characteristic ID` and `Characteristic Description` columns must **NEVER** contain comma-separated lists.
 | Field XPaths | Field Name | Characteristic ID | Characteristic Description | Partitions (Blocks) |
 | :--- | :--- | :--- | :--- | :--- |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/P[4]/INPUT[1] | issue_subject | I1,I2,I3,I4 | I1:String Length,I2:Contains Alphanumeric,I3:Contains Special Chars,I4:Contains Unicode |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[1]/SELECT[1] | issue_status_id | I1 | I1:Option Choice |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[8]/INPUT[1] | issue_due_date | I1,F2,F3 | I1:Date Format,F2:Temporal Relation (to now),F3:Leap Year |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[9]/INPUT[1] | issue_estimated_hours | I1,F2 | I1:Data Type,F2:Value Range |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[3]/DIV[2]/TEXTAREA[1] | issue_notes | I1,F2 | I1:String Length,F2:Content Format |
+| `/HTML[1]/BODY[1]/FORM[1]/DIV[1]/INPUT[1]` | `issue_subject` | I1 | String Length (Range: 1-255) | Valid: {`1 (min)`, `50 (typical)`, `255 (max)`} \<br\> Error: {`0 (empty)`, `256 (too long)`} |
+| `/HTML[1]/BODY[1]/FORM[1]/DIV[1]/INPUT[1]` | `issue_subject` | I2 | Character Set | Valid: {`has_alphabets`, `has_digits`, `has_symbols`} \<br\> Error: {`has_nothing`} |
+| `/HTML[1]/BODY[1]/FORM[1]/DIV[2]/INPUT[1]` | `issue_estimated_hours` | I1 | Input Type | Valid: {`integer`} \<br\> Error: {`alphabets`} |
+| `/HTML[1]/BODY[1]/FORM[1]/DIV[2]/INPUT[1]` | `issue_estimated_hours` | I2 | Value Range | Valid: {`positive`, `zero`, `negative`} \<br\> Error: {`empty`} |
 
-## Step 2: Derive Input Space Partitions
-For each characteristic in Step 1:
-- Define a **set of concrete, non-overlapping input partitions** that divide the input space meaningfully.
-  Each partition must:
-  1. Be a clearly defined subset (e.g., "1–5 characters").
-  2. Be **mutually exclusive** and collectively cover the full range of realistic input variations.
-  3. Avoid placeholder or generic values (e.g., "test", "123456") that do not reflect distinct behaviors.
-  4. Fully cover all realistic input behaviors, with partitions that reflect **semantically and behaviorally distinct** input categories.
-  5. Avoid surface-level differences that do not trigger different system behavior (e.g., `"abc@example.com"` vs. `"xyz@example.com"`).
-### Examples:
-#### Example 1:
-| Form XPath | Field XPaths (Field Name) | Characteristic ID | Characteristic Description | Partitions (Blocks) |
+# Step 2: Field-Level Test Requirement (TR) Pre-analysis
+Before combining TRs across the form, you must first analyze each field independently to identify and resolve internal logical contradictions. This ensures our "building blocks" are valid.
+- **Objective**: For each field, generate a minimal set of abstract Test Requirements (TRs) that cover all its partitions. A TR is a combination of one partition from each of the field's characteristics.
+- **Action**: Identify and flag any TRs that are internally contradictory (infeasible).
+  - Initial TR Set should **covering all partitions** and at least satisfying **Each-Choice Criteria**.
+- If a Test Requirement is infeasible (e.g., `{invalid_format, today}`), you must:
+  - Mark it infeasible with justification.
+  - Then generate a new feasible TR to ensure the uncovered partition (e.g., today) is still tested in another TR.
+  - This repair logic ensures no partition is omitted due to infeasibility.
+  - **Infeasibility Example**: A TR for `issue_subject` combining `{length: empty}` with `{character_set: contains_unicode}` is infeasible because an empty string cannot contain any characters.
+| Field Name | Initial TR Set (covering Each-Choice) | Infeasible TRs & Justification | Revised TRs | Final Valid TRs |
 | :--- | :--- | :--- | :--- | :--- |
-| /HTML[1]/BODY[1]/DIV[2]/DIV[1]/SPAN[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV[3]/DIV[2]/DIV[1]/DIV[2]/DIV[2]/FORM[1]/DIV[1]/DIV[1]/DIV[1]/INPUT[1] | username | I1,I2,I3,I4,I5 | I1:String Length,I2:Contains Letters,I3:Contains Numbers,I4:Contains Special Characters,I5:Contains Unicode Characters | I1:{empty string (0),too short (1-3),normal(4-50),exceed the limit(51-)},I2:{true/false},I3:{true/false},I4:{true/false},I5:{true/false} |
-| /HTML[1]/BODY[1]/DIV[2]/DIV[1]/SPAN[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV[3]/DIV[2]/DIV[1]/DIV[2]/DIV[2]/FORM[1]/INPUT[1] | password | I1,I2,I3,I4,I5,F6 | I1:String Length,I2:Contains Letters,I3:Contains Numbers,I4:Contains Special Characters,I5:Contains Unicode Characters,F6:Is Valid | I1:{empty string (0),too short (1-7),normal(8-74),too long(75-)},I2:{true/false},I3:{true/false},I4:{true/false},I5:{true/false},F6:{true/false} |
-#### Example 2:
-| Field XPaths | Field Name | Characteristic ID | Characteristic Description | Partitions (Blocks) |
+| `issue_subject` | TR\_issubj\_1:{`50 (typical)`, `has_alphabets`}\<br\>TR\_issubj\_2:{`1 (min)`, `has_digits`}\<br\>TR\_issubj\_3:{`255 (max)`, `has_symbols`}\<br\>TR\_issubj\_4:{`0 (empty)`, `has_alphabets`}\<br\>TR\_issubj\_5:{`256 (too long)`, N/A}\<br\>TR\_issubj\_6:{`50 (typical)`, `has_nothing`} | TR\_issubj\_4: A string of length `0` cannot have `has_alphabets`. Its character set must be `has_nothing`.\<br\>TR\_issubj\_6: A string of length `50` cannot have a character set of `has_nothing`. | TR\_issubj\_4a:{`0 (empty)`, `has_nothing`}\<br\>TR\_issubj\_1a:{`50 (typical)`, `has_alphabets` & `has_digits` & `has_symbols`} (Combine to cover all valid charsets minimally) | TR\_issubj\_1a:{`50`, `has_alphabets & digits & symbols`}\<br\>TR\_issubj\_2:{`1`, `has_alphabets`}\<br\>TR\_issubj\_3:{`255`, `has_symbols`}\<br\>TR\_issubj\_4a:{`0`, `has_nothing`}\<br\>TR\_issubj\_5:{`256`, `has_alphabets`} |
+| `issue_estimated_hours` | TR\_hours\_1:{`integer`, `positive`}\<br\>TR\_hours\_2:{`integer`, `zero`}\<br\>TR\_hours\_3:{`integer`, `negative`}\<br\>TR\_hours\_4:{`alphabets`, `positive`}\<br\>TR\_hours\_5:{`integer`, `empty`} | TR\_hours\_4: An `alphabets` input has no numerical `Value Range`; this characteristic is N/A.\<br\>TR\_hours\_5: An `empty` value cannot have an `Input Type` of `integer`; the `Input Type` characteristic is N/A. | TR\_hours\_4a:{`alphabets`, N/A}\<br\>TR\_hours\_5a:{N/A, `empty`} | TR\_hours\_1:{`integer`, `positive`}\<br\>TR\_hours\_2:{`integer`, `zero`}\<br\>TR\_hours\_3:{`integer`, `negative`}\<br\>TR\_hours\_4a:{`alphabets`, N/A}\<br\>TR\_hours\_5a:{N/A, `empty`} |
+
+# Step 3: Construct the Form-Level Test Design Matrix
+Using the **Final Valid TRs** from Step 2, combine them into a minimal set of form-level test cases (TCs).
+## 3.1 Matrix Construction Process
+1. **Determine Test Case Count**: The total number of `TCs` (rows) is determined by the field with the **most `Final Valid TRs`** from Step 2.
+2. **Select a "Driver Field"**: Choose that field to be the "driver." Assign each of its `Final Valid TRs` to a unique `TC`.
+3. **Define a "Scenario Narrative" First**: For each `TC`, **you must first write a clear, one-sentence, bold, concise, human-readable `Scenario Narrative`**. This story guides the selection of all other TRs to ensure logical coherence.
+    > **Scenario Inspiration**: `Valid Full Submission`, `Required Field Missing`, `Invalid Format with Valid Logic`, `Cross-Field Logical Inconsistency`, `Extreme Boundary Inputs`, `High-risk Injection/Abuse Case`.
+4. **Populate Remaining Fields (Pairing)**:
+      - **TC1 is the Happy Path**: Assign the base/happy-path TR from every other field to `TC1`.
+      - **Cover Remaining TRs**: Distribute the remaining valid TRs of all other fields across `TC2`, `TC3`, etc., ensuring they align with the `Scenario Narrative`.
+      - **Reuse Base Case**: Once all partitions for a field have been tested, **that field should revert to its base case (happy path) partition for all subsequent test cases**. This helps isolate variables.
+## 3.2 Example: Test Design Matrix
+| TC | Scenario Narrative | `issue_estimated_hours` TR | `issue_subject` TR |
+| :--- | :--- | :--- | :--- |
+| **TC1** | **Happy Path: A developer logs a standard bug with a typical subject and a positive integer effort estimate.** | TR\_hours\_1:{`integer`, `positive`} | TR\_issubj\_1a:{`50`, `has_alphabets & digits & symbols`} |
+| **TC2**| **Boundary Case: User logs a minimal task with a single-character subject and a zero-hour estimate.** | TR\_hours\_2:{`integer`, `zero`} | TR\_issubj\_2:{`1`, `has_alphabets`} |
+| **TC3** | **Compound Boundary & Error Case: User enters a subject at the maximum allowed length and an invalid negative hour estimate.** | TR\_hours\_3:{`integer`, `negative`} | TR\_issubj\_3:{`255`, `has_symbols`} |
+| **TC4**| **Compound Error Case: User attempts to submit with an empty required subject and non-numeric text for the estimate.**| TR\_hours\_4a:{`alphabets`, N/A} | TR\_issubj\_4a:{`0`, `has_nothing`} |
+| **TC5**| **Compound Error Case: User enters a subject that is too long and leaves the optional estimate field blank.** | TR\_hours\_5a:{N/A, `empty`} | TR\_issubj\_5:{`256`, `has_alphabets`} |
+
+# Step 4: Translate TRs into Concrete Test Data
+Translate the abstract `Test Design Matrix` from Step 3 into concrete, realistic input values.
+| TC | Field Name | Assigned TR | Input Value | Rationale |
 | :--- | :--- | :--- | :--- | :--- |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/P[4]/INPUT[1] | issue_subject | I1,I2,I3,I4 | I1:String Length,I2:Contains Alphanumeric,I3:Contains Special Chars,I4:Contains Unicode | I1:{empty,normal (1-255),exceeds limit (256+)},I2:{true/false},I3:{true/false},I4:{true/false} |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[1]/SELECT[1] | issue_status_id | I1 | I1:Option Choice | I1:{New,In Progress,Resolved,Closed} |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[8]/INPUT[1] | issue_due_date | I1,F2,F3 | I1:Date Format,F2:Temporal Relation (to now),F3:Leap Year | I1:{default,valid (YYYY-MM-DD),invalid format(e.g.,07-2025-31),invalid value(e.g.,2025-02-30)},F2:{past,today,future)},F3:{is leap(e.g.,2028-02-29),not leap} |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[9]/INPUT[1] | issue_estimated_hours | I1,F2 | I1:Data Type,F2:Value Range | I1:{empty,integer,float,non-numeric},F2:{zero,positive,negative} |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[3]/DIV[2]/TEXTAREA[1] | issue_notes | I1,F2 | I1:String Length,F2:Content Format | I1:{empty,normal,long},F2:{plaintext,Markdown} |
+| **TC1** | issue\_subject | TR\_issubj\_1a:{`50`, `has_alphabets & digits & symbols`} | "Fix auth API (ticket \#987): incorrect JWT expiry." | **Happy Path**: A typical, valid title of moderate length with letters, numbers, and symbols. |
+| TC1 | issue\_estimated\_hours | TR\_hours\_1:{`integer`, `positive`} | "8" | **Happy Path**: A standard positive integer representing hours. |
+| **TC2** | issue\_subject | TR\_issubj\_2:{`1`, `has_alphabets`} | "x" | **Boundary**: Tests minimum allowed length (1 char). |
+| TC2 | issue\_estimated\_hours | TR\_hours\_2:{`integer`, `zero`} | "0" | **Boundary**: Covers the `zero` value boundary for the estimate. |
+| **TC3** | issue\_subject | TR\_issubj\_3:{`255`, `has_symbols`} | "!@#%^&()_+-=[]{};':,./<>?~!@#$%^&*()_+-=[]{};':\,./<>?~!@#$%^&()+-=[]{};':,./<>?~!@#$%^&*()_+-=[]{};':\,./<>?~!@#$%^&*()+-=[]{};':,./<>?~!@#$%^&*()_+-=[]{};':\,./<>?~!@#$%^&*!@#%^&()_+-=[]{};':,./<>?~!@#$%^&*()_+-=[]{};':\,./<>?~!@#$%^&()+-=[]{};':,./<>?~" | **Boundary**: Tests maximum allowed length (255 chars). |
+| TC3 | issue\_estimated\_hours | TR\_hours\_3:{`integer`, `negative`} | "-3" | **Error Scenario**: Tests value validation by entering a negative number. |
+| **TC4** | issue\_subject | TR\_issubj\_4a:{`0`, `has_nothing`} | *(empty string)* | **Error Boundary**: Tests required field validation (0 chars). |
+| TC4 | issue\_estimated\_hours | TR\_hours\_4a:{`alphabets`, N/A} | "several hours" | **Error Scenario**: Tests type validation by entering text instead of an integer. |
+| **TC5** | issue\_subject | TR\_issubj\_5:{`256`, `has_alphabets`} | "Thisisaverlongstringthatisdesignedtobeexactlytwohundredandfiftysixcharacterslonginordertotesttheupperboundaryoftheinputfieldvalidationlogicandensurethatthesystemcorrectlyrejectsaninputthatisexceedingthespecifiedmaximumlengthof255charactersABCDEFGHIJKLMNOPQ" | **Error Boundary**: Tests rejection of oversized input (256 chars). |
+| TC5 | issue\_estimated\_hours | TR\_hours\_5a:{N/A, `empty`} | *(empty string)* | **Minimal Input**: Covers the `empty` partition for an optional field. |
 
-## Step 3: Generate Form-Level Test Cases (Each-Choice Criteria)
-Based on the field partition in Step 2:
-- Generate **a minimal set of complete logically coherent form-level test cases** that satisfies the **Each-Choice Criteria**:
-### Generation Principles:
-- You must generate:
-  - **Minimal (Each-Choice)**: The total number of test cases should be determined by the field with the most partitions. Your goal is to combine partitions cleverly so that every partition of every field is tested in the fewest possible number of form submissions.
-  - **Systematic Variation**: Create subsequent test cases by systematically covering the remaining untested partitions (e.g., empty values, invalid formats, edge cases), ideally changing one or two aspects from the base case to isolate bugs.
-  - **Consistency**: All values within a single test case must be **semantically consistent, valid, and non-redundant**. Avoid logically contradictory combinations (e.g., Age: 15 and Occupation: Retiree).
-    - If a 'First Name' field is 'John', and a 'Last Name' field is 'Doe', don't combine 'John' with an obviously unrelated 'Age' like '-5').
-  - **Presumption of Feasibility**: If a combination's validity depends on implementation-specific business logic (i.e., it is not logically or semantically self-contradictory), assume it is feasible. Do not attempt to infer complex back-end validation rules.
-#### Actionable Steps
-##### Substep 1: Generate Field-Level Test Case (Each-Choice Criteria)
-###### Examples:
-####### Example 1:
-| Field XPaths | Field Name | Characteristic ID | Characteristic Description | Partitions (Blocks) | Test Requirements (Each-Choice Criteria) | Infeasible TRs | Revised TRs | Test Cases | Memo |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| /HTML[1]/BODY[1]/DIV[2]/DIV[1]/SPAN[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV[3]/DIV[2]/DIV[1]/DIV[2]/DIV[2]/FORM[1]/DIV[1]/DIV[1]/DIV[1]/INPUT[1] | username | I1,I2,I3,I4,I5 | I1:String Length,I2:Contains Letters,I3:Contains Numbers,I4:Contains Special Characters,I5:Contains Unicode Characters | I1:{empty string (0),too short (1-3),normal(4-50),exceed the limit(51-)},I2:{true/false},I3:{true/false},I4:{true/false},I5:{true/false} | TR1:{0,false,false,false,false},TR2:{1,false,true,false,true},TR3:{50,true,false,true,false},TR4:{51,true,true,true,true} | TR1:If there is an 1-length string, it's infeasible to contain both of number and Unicode Character,TR4:if the length exceeded the limit, it can't be a valid username. | TR1':{3,false,true,false,true,false},TR4':{51,true,true,true,true,false} | TC1:{0,false,false,false,false,false},TC2:{3,false,true,false,true,false},TC3:{50,true,false,true,false,true},TC4:{51,true,true,true,true,false} | TC1 covers TR1';TC2 covers TR2;TC3 covers TR3;TC4 covers TR4'; |
-| /HTML[1]/BODY[1]/DIV[2]/DIV[1]/SPAN[1]/DIV[1]/DIV[2]/DIV[2]/DIV[1]/DIV[3]/DIV[2]/DIV[1]/DIV[2]/DIV[2]/FORM[1]/INPUT[1] | password | I1,I2,I3,I4,I5,F6 | I1:String Length,I2:Contains Letters,I3:Contains Numbers,I4:Contains Special Characters,I5:Contains Unicode Characters,F6:Is Valid | I1:{empty string (0),too short (1-7),normal(8-74),too long(75-)},I2:{true/false},I3:{true/false},I4:{true/false},I5:{true/false},F6:{true/false} | {0,false,false,false,false,false},{7,false,true,false,true,false},{74,false,true,false,true,true},{75,true,true,false,false,false} | none | N/A | TC1:{0,false,false,false,false,false},TC2:{7,false,true,false,true,false},TC3:{74,false,true,false,true,true},TC4:{75,true,true,false,false,false} | TC1 covers TR1;TC2 covers TR2;TC3 covers TR3;TC4 covers TR4; |
-####### Example 2:
-| Field XPaths | Field Name | Characteristic ID | Characteristic Description | Partitions (Blocks) | Test Requirements (Each-Choice Criteria) | Infeasible TRs | Revised TRs | Test Cases | Memo |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/P[4]/INPUT[1] | issue_subject | I1,I2,I3,I4 | I1:String Length,I2:Contains Alphanumeric,I3:Contains Special Chars,I4:Contains Unicode | I1:{empty,normal (1-255),exceeds limit (256+)},I2:{true/false},I3:{true/false},I4:{true/false} | TR1:{normal,true,false,true},TR2:{empty,false,false,false},TR3{exceedslimit,true,true,false} | None | N/A | TC1:{normal,true,false,true},TC2:{empty,false,false,false},TC3:{exceedslimit,true,true,false} | TC1 covers TR1;TC2 covers TR2;TC3 covers TR3 |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[1]/SELECT[1] | issue_status_id | I1 | I1:Option Choice | I1:{New,In Progress,Resolved,Closed} | TR1:{New},TR2:{In Progress},TR3:{Resolved},TR4:{Closed} | None | N/A | TC1:{New},TC2:{In Progress},TC3:{Resolved},TC4:{Closed} | TC1 covers TR1;TC2 covers TR2;TC3 covers TR3;TC4 covers TR4 |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[8]/INPUT[1] | issue_due_date | I1,F2,F3 | I1:Date Format,F2:Temporal Relation (to now),F3:Leap Year | I1:{default,valid (YYYY-MM-DD),invalid format(e.g.,year-month-31),invalid value(e.g.,9999-99-99)},F2:{past,today,future)},F3:{is leap(e.g.,2028-02-29),not leap} | TR1:{valid,past,not leap},TR2:{default,today,N/A},TR3:{invalid format,N/A,N/A},TR4:{invalid value,future,not leap} | None | N/A | TC1:{valid,past,not leap},TC2:{default,today,N/A},TC3:{invalid format,N/A,N/A},TC4:{invalid value,future,not leap} | TC1 covers TR1;TC2 covers TR2;TC3 covers TR3;TC4 covers TR4 |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[1]/DIV[1]/DIV[1]/DIV[1]/DIV[1]/P[9]/INPUT[1] | issue_estimated_hours | I1,F2 | I1:Data Type,F2:Value Range | I1:{empty,integer,float,non-numeric},F2:{zero,positive,negative} | TR1:{integer,positive},TR2:{empty,N/A},TR3:{non-numeric,N/A},TR4:{float,negative} | TR3  | None (TR3 cannot be revised because such inputs cannot be generated. Therefore, TR3 are removed from TRs) | TC1:{integer,positive},TC2:{empty,N/A},TC3:{float,negative} | TC1 covers TR1;TC2 covers TR2;TC3 covers TR4 |
-| /HTML[1]/BODY[1]/FORM[1]/DIV[1]/FIELDSET[3]/DIV[2]/TEXTAREA[1] | issue_notes | I1,F2 | I1:String Length,F2:Content Format | I1:{empty,normal,long},F2:{plaintext,Markdown} | TR1:{normal,plaintext},TR2:{empty,N/A},TR3:{long,Markdown} | None | N/A | TC1:{normal,plaintext},TC2:{empty,N/A},TC3:{long,Markdown} | TC1 covers TR1;TC2 covers TR2;TC3 covers TR3 |
-##### Substep 2: Generate Form-Level Test Case (Each-Choice Criteria)
-This substep combines the field-level test cases generated in Substep 1 into a minimal set of comprehensive, form-level test cases. The primary method is to create a **Test Case Combination Matrix**.
-- The number of form-level test cases is determined by the field that requires the most individual test cases. Take the `Example 2` test cases from Substep 1 as an example: the `issue_status_id` and `issue_due_date` fields each require **4 field-level test cases**. Therefore, a minimum of **4 form-level test cases** are needed to cover all field-level test requirements with the Each-Choice Criteria.
-###### Generation Principles:
-- The matrix maps each form-level test case to a specific test case from each field. The construction follows these principles:
-- **Base Case First:** The first form-level test case (Form TC1) establishes a "happy path" by combining the baseline test case (TC1) from every single field.
-- **Systematic Combination**: Subsequent form-level test cases are created by strategically combining the remaining field-level test cases, ensuring that every field-level test case is used at least once in the final set.
-###### Examples:
-####### Example 1: Test Case Combination Matrix
-| Form-Level Test Case | `username` Test Case | `password` Test Case | Purpose |
-| :--- | :--- | :--- | :--- |
-| Form TC1 | TC3 | TC3 | Valid/Normal inputs (Happy Path) |
-| Form TC2 | TC2 | TC2 | Too short inputs |
-| Form TC3 | TC1 | TC1 | Empty inputs |
-| Form TC4 | TC4 | TC4 | Too long / Exceeds limit inputs |
-
-####### Example 2: Test Case Combination Matrix
-| Form-Level Test Case | `issue_subject` Test Case | `issue_status_id` Test Case | `issue_due_date` Test Case | `issue_estimated_hours` Test Case | `issue_notes` Test Case | Purpose |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Form TC1 | TC1 | TC1 | TC1 | TC1 | TC1 | Valid/Normal inputs (Happy Path) |
-| Form TC2 | TC2 | TC2 | TC2| TC2 | TC2 | Empty/Default value handling |
-| Form TC3 | TC3 | TC3 | TC3 | TC3 | TC3 | Invalid formats |
-| Form TC4 | TC1 | TC4 | TC4 | TC1 | TC1 | Final state and invalid value handling |
-##### Substep 3: Generate Concrete Input Values
-This substep translates the abstract test case combinations from the `Test Case Combination Matrix` into concrete, realistic input values for each form submission. Each set of values corresponds to one `Form-Level Test Case` and is designed to be logically coherent.
-###### Examples
-####### Example 1
-| Form-Level Test Case | Field Name | Input Value | Rationale |
-| :--- | :--- | :--- | :--- |
-| Form TC1 | username | alejandra.calderon_profile | Corresponds to TC3: A valid username of normal length (23 chars) containing letters, numbers, and special characters, representing a standard successful login attempt. |
-|  | password | 199819981998 | Corresponds to TC3: A valid password of normal length (12 chars) that meets the unusual system requirement of containing only numbers and Unicode characters (specifically, a birth year in Arabic, Thai, and Devanagari numerals). |
-| Form TC2 | username | 7世 | Corresponds to TC2: An invalid, too-short username (2 chars) that combines a number and a Unicode character to test the lower length boundary and mixed character type validation. |
-|  | password | €1 | Corresponds to TC2: An invalid, too-short password (2 chars) combining a Unicode currency symbol and a number, testing handling of short, non-standard inputs. |
-| Form TC3 | username |  | Corresponds to TC1: An empty string to test how the system handles a missing required username. |
-|  | password |  | Corresponds to TC1: An empty string to test how the system handles a missing required password. |
-| Form TC4 | username | this-username-is-intentionally-made-extremely-long-to-test-the-upper-boundary-limit-of-the-input-field-Ω-123 | Corresponds to TC4: An invalid, overly long username (129 chars) that includes letters, numbers, special characters, and Unicode to test the system's upper length limit validation. |
-|  | password | ThisPasswordIsIntentionallyMadeVeryLongToExceedTheSeventyFourCharacterLimitAndItOnlyContainsLettersAndNumbers1234567890 | Corresponds to TC4: An invalid, overly long password (116 chars) containing only letters and numbers to test the password field's specific upper length boundary. |
-####### Example 2
-| Form-Level Test Case | Field Name | Input Value | Rationale |
-| :--- | :--- | :--- | :--- |
-| Form TC1 | issue_subject | 修復使用者個人資料頁面的顯示錯誤 | Corresponds to TC1: Normal length, contains Unicode. |
-|  | issue_status_id | New | Corresponds to TC1: Option 'New'. |
-|  | issue_due_date | 2025-06-20 | Corresponds to TC1: Valid format, in the past (relative to July 2025), not a leap year. |
-|  | issue_estimated_hours | 8 | Corresponds to TC1: Positive integer. |
-|  | issue_notes | 當使用者上傳大於 2MB 的頭像時，個人資料頁面的佈局會中斷。需要後端和前端協同修復。 | Corresponds to TC1: Normal length, plaintext content. |
-| Form TC2 | issue_subject |  | Corresponds to TC2: Empty string. |
-|  | issue_status_id | In Progress | Corresponds to TC2: Option 'In Progress'. |
-|  | issue_due_date |  | Corresponds to TC2: Empty value, expecting system default (e.g., today's date). |
-|  | issue_estimated_hours |  | Corresponds to TC2: Empty value. |
-|  | issue_notes |  | Corresponds to TC2: Empty string. |
-| Form TC3 | issue_subject | CRITICAL BUG: System database deadlock occurs when processing orders with special characters (e.g., &, %, <) in the promo code field, causing the entire checkout API (api/v3/checkout) to become unresponsive. This affects ALL transactions and requires immediate attention!!" + "xxxxx..." (repeat to exceed 256 chars) | Corresponds to TC3: Exceeds length limit, contains special characters. |
-|  | issue_status_id | Resolved | Corresponds to TC3: Option 'Resolved'. |
-|  | issue_due_date | 2025/09/15 | Corresponds to TC3: Invalid format (uses '/' instead of '-'). |
-|  | issue_estimated_hours | -4.5 | Corresponds to TC3: Negative float value (e.g., a time credit). |
-|  | issue_notes | # 問題根本原因分析\n\n**重現步驟**:\n\n1. 登入一個帳號\n2. 前往購物車\n3. 輸入一個帶有&符號的優惠碼\n\n*系統崩潰*\n\n---\n\n此處省略大量Markdown格式的日誌和堆疊追蹤訊息以達到超長內容的要求。 | Corresponds to TC3: Long content with Markdown formatting. |
-| Form TC4 | issue_subject | 優化資料庫查詢效能 | Corresponds to TC1: A valid, normal input to isolate other fields' tests. |
-|  | issue_status_id | Closed | Corresponds to TC4: Option 'Closed'. |
-|  | issue_due_date | 2026-02-29 | Corresponds to TC4: "Invalid value (February 29th does not exist in a non-leap year)." |
-|  | issue_estimated_hours | 20 | Corresponds to TC1: A valid, normal input. |
-|  | issue_notes | 已完成對應資料表的索引優化並部署上線。監控一週後確認查詢延遲已從平均 500ms 降至 80ms。 | Corresponds to TC1: A valid, normal closing note. |
-
-### Final Output Format
-- For each input field in a test case, you must include only the following elements:
-  - The XPath selected from the provided `{provided_xpaths}` list** (`xpath`)
-  - The input value to be entered (`input_value`)
-  - The interaction type as an action number (`action_number`)
-- Every generated test case must include a final **form submission action**, either by **clicking a submit-capable element** (e.g., `<button type="submit">`, `<input type="submit">`) or by triggering form submission through other valid user interactions:
-  - The element's **ABSOLUTE** XPath (`xpath`)
-    - It must be a valid interactive element (e.g., `<button type="submit">`, `<input type="submit">`) that exists in the `{Form DOM Hierarchy}`.
-  - Empty string input value (`input_value`)
-  - The `action_number` specifying the interaction type. You must choose a valid number for this value from the Action Number Mapping. (`action_number`)
-#### XPath Guidelines
-- Only use the XPath selected from the provided `{provided_xpaths}` list**
-- Do not invent or synthesize new XPath paths.
-- To ensure correctness and prevent XPath-related errors, you must validate each XPath expression against the following rules:
-  1. Each XPath expression must be syntactically valid and match the following regular expression: `^(\/[A-Za-z][A-Za-z0-9_.-]*\[\d+\])+$`
-    This ensures:
-    - Each node must start with a slash `/`.
-    - Each tag name must be legal:
+# Step 5: Final Review and Output Generation
+Perform a final review to ensure completeness and coherence before generating the machine-readable output.
+## 5.1 Final Review Checklist
+**[CRITICAL] Internal Monologue before final output:** Before generating the final table, perform a silent final review. Mentally check off the following points. Do not output this checklist.
+- **Completeness**: Is every partition from every characteristic in Step 1 covered by at least one test case?
+- **Minimality**: Does the total number of test cases match the highest count of `Final Valid TRs` for a single field from Step 2?
+- **Logical Coherence**: Does the concrete data in each test case perfectly match its `Scenario Narrative`? Are there any logical contradictions (e.g., a "closed" issue with a future due date)?
+- **XPath & Action Integrity**: Have I used the exact XPaths and Action Numbers from the provided inputs? Does every test case end with a submit action?
+  - [CRITICAL] All provided `{field_xpaths}` MUST be logical descendants of the `{form_xpath}`.
+  - Treat the `{dom}` input as a static text reference ONLY. Your single source of truth for interactable elements and their XPaths is the `{field_xpaths}` list.
+  - Do not invent or synthesize new XPath paths.
+  - To ensure correctness and prevent XPath-related errors, you must validate each XPath expression against the following rules:
+    - Each XPath expression must be syntactically valid and match the following regular expression: `^(\/[A-Za-z][A-Za-z0-9_.-]*\[\d+\])+$`
+      This ensures:
+      - Each node must start with a slash `/`.
+      - Each tag name must be legal:
       - Each tag name must start with a letter (`A–Z` or `a–z`)
       - Each tag name may contain letters (`A–Z` or `a–z`), digits (`0 - 9`), hyphens (`-`), underscores (`_`), and periods (`.`)
       - Each tag must be followed by exactly one numeric index enclosed in balanced square brackets (e.g., `DIV[1]`)
-  2. Use well-formed bracket notation:
-    - [Allowed] Valid example:
-      - `/HTML[1]/BODY[1]/DIV[2]/FORM[1]/INPUT[3]`
-    - [Disallowed] Invalid Examples:
-      - `/HTML[1]/BODY[1]/DIV[3[1]` (unbalanced/malformed brackets)
-      - `/HTML[1]/BODY[1]/DIV[[1]]`, `/HTML[1]/BODY[1]/DIV[]`, `/HTML[1]/BODY[1]/DIV[abc]` (nested, empty, or non-numeric indices)
-      - `/HTML[1]/BODY[1DIV[1]` (missing '/' between nodes, or concatenated element names)
-      - Any expression containing illegal characters or unsupported punctuation
-  3. The XPath must start with `{form_xpath}`, the absolute XPath of the `<form>` element
-  4. [Important] Never fabricate, infer, or hallucinate XPath expressions:
-    - If an element does **not** exist in `{dom}`, omit it.
-    - Never guess sibling positions or fabricate index values.
-  5. [Important] If any XPath goes wrong, find out the referenced XPath from the provided `{provided_xpaths}` list and fix it.
+    - Use well-formed bracket notation:
+      - [Allowed] Valid example:
+        - `/HTML[1]/BODY[1]/DIV[2]/FORM[1]/INPUT[3]`
+      - [Disallowed] Invalid Examples:
+        - `/HTML[1]/BODY[1]/DIV[3[1]` (unbalanced/malformed brackets)
+        - `/HTML[1]/BODY[1]/DIV[[1]]`, `/HTML[1]/BODY[1]/DIV[]`, `/HTML[1]/BODY[1]/DIV[abc]` (nested, empty, or non-numeric indices)
+        - `/HTML[1]/BODY[1DIV[1]` (missing '/' between nodes, or concatenated element names)
+        - Any expression containing illegal characters or unsupported punctuation
+    - The XPath must start with `{form_xpath}`, the absolute XPath of the `<form>` element
+    - [Important] Never fabricate, infer, or hallucinate XPath expressions:
+      - If an element does **not** exist in `{dom}`, omit it.
+      - Never guess sibling positions or fabricate index values.
+    - [Important] If any XPath goes wrong, find out the referenced XPath from the provided `{provided_xpaths}` list and fix it.
+      - **Strictly adhere to the provided XPaths**. Do not invent or modify them. Validate them against the provided `{Form DOM Hierarchy}`.
+## 5.2 Organize Result
+The final output MUST be a single, flat list of actions, presented in a markdown table format.
+| Form XPath | Test Case | xpath | action_number | input_value |
+| :--- | :--- | :--- | :--- | :--- |
+| /HTML[1]/BODY[1]/FORM[1] | TC1 | /HTML[1]/BODY[1]/FORM[1]/DIV[1]/INPUT[1] | 1 | "Fix auth API (ticket #987): incorrect JWT expiry." |
+| /HTML[1]/BODY[1]/FORM[1] | TC1 | /HTML[1]/BODY[1]/FORM[1]/DIV[2]/INPUT[1] | 1 | "8" |
+| /HTML[1]/BODY[1]/FORM[1] | TC1 | /HTML[1]/BODY[1]/FORM[1]/DIV[3]/BUTTON[1] | 0 | |
+| /HTML[1]/BODY[1]/FORM[1] | TC2 | /HTML[1]/BODY[1]/FORM[1]/DIV[1]/INPUT[1] | 1 | "x" |
+| /HTML[1]/BODY[1]/FORM[1] | TC2 | /HTML[1]/BODY[1]/FORM[1]/DIV[2]/INPUT[1] | 1 | "0" |
+| /HTML[1]/BODY[1]/FORM[1] | TC2 | /HTML[1]/BODY[1]/FORM[1]/DIV[3]/BUTTON[1] | 0 | |
+| /HTML[1]/BODY[1]/FORM[1] | TC3 | /HTML[1]/BODY[1]/FORM[1]/DIV[1]/INPUT[1] | 1 | "!@#%^&()_+-=[]{};':,./<>?~!@#$%^&*()_+-=[]{};':\,./<>?~!@#$%^&()+-=[]{};':,./<>?~!@#$%^&*()_+-=[]{};':\,./<>?~!@#$%^&*()+-=[]{};':,./<>?~!@#$%^&*()_+-=[]{};':\,./<>?~!@#$%^&*!@#%^&()_+-=[]{};':,./<>?~!@#$%^&*()_+-=[]{};':\,./<>?~!@#$%^&()+-=[]{};':,./<>?~" |
+| /HTML[1]/BODY[1]/FORM[1] | TC3 | /HTML[1]/BODY[1]/FORM[1]/DIV[2]/INPUT[1] | 1 | "-3" |
+| /HTML[1]/BODY[1]/FORM[1] | TC3 | /HTML[1]/BODY[1]/FORM[1]/DIV[3]/BUTTON[1] | 0 | |
+| /HTML[1]/BODY[1]/FORM[1] | TC4 | /HTML[1]/BODY[1]/FORM[1]/DIV[1]/INPUT[1] | 1 | |
+| /HTML[1]/BODY[1]/FORM[1] | TC4 | /HTML[1]/BODY[1]/FORM[1]/DIV[2]/INPUT[1] | 1 | "several hours" |
+| /HTML[1]/BODY[1]/FORM[1] | TC4 | /HTML[1]/BODY[1]/FORM[1]/DIV[3]/BUTTON[1] | 0 | |
+| /HTML[1]/BODY[1]/FORM[1] | TC5 | /HTML[1]/BODY[1]/FORM[1]/DIV[1]/INPUT[1] | 1 | "Thisisaverlongstringthatisdesignedtobeexactlytwohundredandfiftysixcharacterslonginordertotesttheupperboundaryoftheinputfieldvalidationlogicandensurethatthesystemcorrectlyrejectsaninputthatisexceedingthespecifiedmaximumlengthof255charactersABCDEFGHIJKLMNOPQ" |
+| /HTML[1]/BODY[1]/FORM[1] | TC5 | /HTML[1]/BODY[1]/FORM[1]/DIV[2]/INPUT[1] | 1 | |
+| /HTML[1]/BODY[1]/FORM[1] | TC5 | /HTML[1]/BODY[1]/FORM[1]/DIV[3]/BUTTON[1] | 0 | |
+## 5.3 Final Output Format
+- For each input field in a test case, you must include: `xpath`, `input_value`, `action_number`.
+  - Select target `action_number` from the provided `{Action Number Mapping}`.
+  - Every test case must conclude with a form submission action (e.g., clicking a submit button).
 
-# Required Inputs
+# REQUIRED INPUTS
 ## Action Number Mapping:
+```json
 {
-  -1: changeFocus,
-  0: click,
-  1: inputString
-}""") + \
+  "-1": "changeFocus",
+  "0": "click",
+  "1": "inputString"
+}
+```
+""") + \
 """### Form XPath:
 {form_xpath}
 ### Form DOM Hierarchy:
