@@ -1,1 +1,1 @@
-__all__ = ["ILlmService", "LlmTemplateService", "LlmServiceContainer", "SystemPromptFactory"]
+__all__ = ["ILlmService", "LlmTemplateService", "LlmServiceContainer", "SystemPromptFactory", "WebExtractedInfo"]
