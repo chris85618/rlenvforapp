@@ -12,11 +12,9 @@ class InputValueHandler:
         if self.high_level_action_list_pool.get(url, form_xpath) is not None:
             # Add if and only if necessary
             return
-
-        # Get form elements
-        form_elements = page_dom.getByXpath(form_xpath).tostring()
+        page_dom_str = page_dom.tostring()
         # Get input values
-        high_level_action_list: HighLevelActionList = InputGeneratorHandler().get_response(form_elements, form_xpath=form_xpath, field_xpath_list=field_xpath_list)
+        high_level_action_list: HighLevelActionList = InputGeneratorHandler().get_response(dom=page_dom_str, form_xpath=form_xpath, field_xpath_list=field_xpath_list)
         self.high_level_action_list_pool.add(url, form_xpath, high_level_action_list)
 
     def insert(self, index:int, url:str, form_xpath:str, high_level_action:HighLevelAction):

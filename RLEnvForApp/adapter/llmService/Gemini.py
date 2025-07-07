@@ -16,12 +16,13 @@ class Gemini(ILlmService):
     llm = None
     structured_llm = None
 
-    def __init__(self, model_name="gemini-2.5-pro", temperature=0):
+    def __init__(self, model_name="gemini-2.5-pro", temperature=0, structure_output_format=None):
         self.llm = ChatGoogleGenerativeAI(
             model=model_name,
             temperature=temperature,
         )
-        self.structured_llm = self.llm.with_structured_output(TestCombinationOutputResponse)
+        if structure_output_format is not None:
+            self.structured_llm = self.llm.with_structured_output(structure_output_format)
 
     def get_response(self, prompt: str, **kwargs) -> str:
         # TODO: Improve prompt, maybe add system_prompt, etc...

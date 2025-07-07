@@ -25,9 +25,9 @@ You are an expert in software testing, with centuries of experience in web appli
 # TASK
 Your task is to generate a minimal yet complete set of executable form submissions using the **Each-Choice Coverage Criterion**. Each test case must cover at least one unique partition of a characteristic from some input field.
 ## Example Environment Configurations
-- This is an environment configuration to limit output value:
-  `MAX_INPUT_LENGTH=300`
-> Adjust `{MAX_INPUT_LENGTH}` accordingly before running the prompt.
+- This is an environment configuration to limit output value:""") + \
+"  `MAX_INPUT_LENGTH={MAX_INPUT_LENGTH}`" + \
+SystemPromptFactory._escape_all_braces("""
 # STRATEGY
 Your generation process is a synthesis of **Top-Down** and **Bottom-Up** design, executed in a 6-step process**. Each step’s output serves as the direct input to the next, ensuring traceability, logical coherence, and process transparency.
 - **Step 0: Scenario Definition (Top-Down Strategy)**
@@ -46,8 +46,9 @@ Your generation process is a synthesis of **Top-Down** and **Bottom-Up** design,
     You **MUST** generate your outputs for each step using markdown H2 headers (e.g., `## Step 0: ...`, `## Step 1: ...`). This structure is **mandatory** for traceability, verification, and consistent downstream processing.
 # Global Rules Ordered by Priorities
 These are the fundamental models that govern your entire process:
-1. Testing Environment Constraints
-    - Maximum Input String Length: **{MAX_INPUT_LENGTH}**
+1. Testing Environment Constraints""") + \
+"    - Maximum Input String Length: **{MAX_INPUT_LENGTH}**" + \
+SystemPromptFactory._escape_all_braces("""
       > **Instruction:** Higher limits (e.g., DB fields) can guide boundary tests, but generated inputs must stay within {MAX_INPUT_LENGTH} since testers only support this limit.
 2. **Think Step-by-Step**: Your generation process follows the process, enforced in strict order. Each step produces structured output, which will feed directly into the next step.
 3. **Logical & Physical Feasibility**: A test case must be executable. For example, an empty string cannot have a character composition. This rule is absolute.
@@ -612,7 +613,7 @@ You **MUST** strictly follow the sequence below, filling the table column by col
 | Scenario ID | Source Evidence ID(s) |
 | :--- | :--- |
 | SCN-HP-01v2 | EVD-001, EVD-002, EVD-003, EVD-004 |
-| SCN-ERR-01v2 | EVD-001, EVD-002, EVD-003 |
+| SCN-ERR-01v2 | EVD-001, EVD-002, EVD-003, EVD-004 |
 | SCN-BND-01v2 | EVD-001, EVD-002, EVD-003, EVD-004 |
 | SCN-ERR-02v2 | EVD-003 |
 | SCN-ERR-02v3 | EVD-003 |
@@ -783,7 +784,7 @@ You **MUST** strictly follow the sequence below, filling the table column by col
 | msg-CHR-F01-PRT-02 | TC-009v1 | ✅ Pass |
 | msg-CHR-F01-PRT-03 | TC-001v11 | ✅ Pass |
 ### 5.8 Concretization Traceability: Data to Design & Context
-**Objective**: To trace each concrete test data point back to both its abstract technical design (`TR`) and its contextual/narrative origins (`Scenario`, `Evidence`).
+**Objective**: To trace each concrete test data point back to both its abstract technical design (`TR`) and its contextual/narrative origins (`Scenario`, `Evidence`). The matrix is used to audit and has planned to be reviewed formally, so it **MUST** be generated. Please **CONFIRM** it's **COMPLETE**, containing one row for every single input value defined in the Step `4.3: Final Test Data Generation Table`. Missing any row or any data is **NOT ALLOWED**. No summarization is permitted.
 | Composite Value ID (TC, Field) | Concrete Input Value | Target TR ID | Governing Scenario ID | Source Evidence ID |
 | :--- | :--- | :--- | :--- | :--- |
 | (TC-001v11, company) | 宇宙航空研究開発機構 | TR-co-05 | SCN-HP-01v2 | EVD-001 |
@@ -794,17 +795,37 @@ You **MUST** strictly follow the sequence below, filling the table column by col
 | (TC-002v3, name) | | TR-name-01 | SCN-ERR-01v2 | EVD-002 |
 | (TC-002v3, email) | | TR-email-01 | SCN-ERR-01v2 | EVD-003 |
 | (TC-002v3, message) | | TR-msg-01 | SCN-ERR-01v2 | EVD-004 |
+| (TC-003v1, company) | Stark Industries | TR-co-02 | SCN-BND-01v2 | EVD-001 |
+| (TC-003v1, name) | Tony Stark | TR-name-02 | SCN-BND-01v2 | EVD-002 |
 | (TC-003v1, email) | AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA@stark.com | TR-email-03 | SCN-BND-01v2 | EVD-003 |
+| (TC-003v1, message) | | TR-msg-01 | SCN-BND-01v2 | EVD-004 |
+| (TC-004v1, company) | Cyberdyne Systems | TR-co-02 | SCN-ERR-02v2 | EVD-001 |
+| (TC-004v1, name) | Miles Dyson | TR-name-02 | SCN-ERR-02v2 | EVD-002 |
 | (TC-004v1, email) | miles.dyson.cyberdyne.com | TR-email-04 | SCN-ERR-02v2 | EVD-003 |
+| (TC-004v1, message) | | TR-msg-01 | SCN-ERR-02v2 | EVD-004 |
+| (TC-005v1, company) | Wayne Enterprises | TR-co-02 | SCN-ERR-02v3 | EVD-001 |
+| (TC-005v1, name) | Lucius Fox | TR-name-02 | SCN-ERR-02v3 | EVD-002 |
 | (TC-005v1, email) | lucius.fox@ | TR-email-05 | SCN-ERR-02v3 | EVD-003 |
+| (TC-005v1, message) | | TR-msg-01 | SCN-ERR-02v3 | EVD-004 |
+| (TC-006v1, company) | Oscorp | TR-co-02 | SCN-SEC-01v2 | EVD-001 |
+| (TC-006v1, name) | Norman Osborn | TR-name-02 | SCN-SEC-01v2 | EVD-002 |
 | (TC-006v1, email) | "><script>alert('xss')</script>@oscorp.com | TR-email-06 | SCN-SEC-01v2 | EVD-003 |
+| (TC-006v1, message) | | TR-msg-01 | SCN-SEC-01v2 | EVD-004 |
+| (TC-007v1, company) | The Daily Planet | TR-co-02 | SCN-HP-01v3 | EVD-001 |
+| (TC-007v1, name) | Clark Kent | TR-name-02 | SCN-HP-01v3 | EVD-002 |
 | (TC-007v1, email) | clark.kent88@gmail.com | TR-email-07 | SCN-HP-01v3 | EVD-003 |
+| (TC-007v1, message) | | TR-msg-01 | SCN-HP-01v3 | EVD-004 |
 | (TC-008v1, company) | CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC | TR-co-03 | SCN-BND-01v2 | EVD-001 |
 | (TC-008v1, name) | NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN | TR-name-03 | SCN-BND-01v2 | EVD-002 |
-| (TC-008v1, message) | MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM- | TR-msg-03 | SCN-BND-01v2 | EVD-004 |
+| (TC-008v1, email) | contact@verylongcompanyname.com | TR-email-02 | SCN-BND-01v2 | EVD-003 |
+| (TC-008v1, message) | MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM | TR-msg-03 | SCN-BND-01v2 | EVD-004 |
 | (TC-009v1, company) | Procter & Gamble | TR-co-04 | SCN-BND-01v2 | EVD-001 |
 | (TC-009v1, name) | Jean-Luc O'Malley | TR-name-04 | SCN-BND-01v2 | EVD-002 |
+| (TC-009v1, email) | jl.omalley@pg.com | TR-email-02 | SCN-BND-01v2 | EVD-003 |
 | (TC-009v1, message) | Vi är intresserade av en demonstration av er mjukvara. | TR-msg-04 | SCN-BND-01v2 | EVD-004 |
+| (TC-010v1, company) | Acme Corporation | TR-co-02 | SCN-BND-01v2 | EVD-001 |
+| (TC-010v1, name) | Wile E. Coyote | TR-name-02 | SCN-BND-01v2 | EVD-002 |
+| (TC-010v1, email) | w.coyote@acme.com | TR-email-02 | SCN-BND-01v2 | EVD-003 |
 | (TC-010v1, message) | We are interested in your enterprise solution for our logistics and manufacturing divisions. Please provide information on pricing and on-premise deployment options. | TR-msg-02 | SCN-BND-01v2 | EVD-004 |
 ### 5.9 Final Verification Checklist
 **Objective**: To act as the final quality gate before delivering the results. In this step, you **MUST** perform a comprehensive, end-to-end audit of all artifacts generated in Steps 0 through 5. Your role is that of a Quality Assurance lead, meticulously verifying all traceability links. If any discrepancy, omission, or error is found, you **MUST** go back, correct the relevant table in the preceding steps, and then re-verify the entire chain before proceeding. After the audit is complete, you will summarize the results in the table below.
@@ -862,65 +883,69 @@ After performing the comprehensive audit and any necessary corrections as descri
     * **Verify XPath**: You **MUST** confirm that the `xpath` is an **exact match** to the corresponding `XPath` in the `Step 4: Test Data Generation` table for that specific `(Test Case ID, Field Name)` pair.
     * **Verify Input Value**: You **MUST** confirm that the `input_value` is an **exact match** to the corresponding `Input Value` in the `Step 4: Test Data Generation` table.
     * **Verify Action Number**: You **MUST** confirm that the `action_number` is a valid key present in the `Action Number Mapping` JSON. Furthermore, the number must be contextually correct for the action being performed (e.g., `1` for an input field, `0` for a button click).
+    * **Verify Expected Test Result**: You MUST trace the `Test Case ID` back to the `Step 3: Test Case Design Matrix`, retrieve its `Expected Outcome`, and confirm that the generated "Passed"/"FAILED" value is a correct consolidation.
 3.  **Correction and Finalization**: If **any discrepancy** is found during this **four-point** audit (whether in the `Scenario`, `xpath`, `input_value`, or `action_number`), you **MUST** correct the value in your internally assembled table to match its definitive source. The sources are: `Step 3` for Scenario, `Step 4` for XPath/Value, and the `Action Number Mapping` for the `action_number` based on the action's context. This guarantees that the final output is a perfect reflection of the verified design.
 4.  **Generate Verified Table**: **Only after** successfully completing this internal assembly, comprehensive audit, and any necessary corrections, you will generate the final output table according to the formatting rules below.
 - **Objective**: Present the final, executable test actions in a clean, human-readable, and machine-parseable format.
 - The output MUST be a single, flat list of actions, presented in a markdown table with the following structure and rules:
-    - **Columns**: `Test Case`, `Scenario`, `xpath`, `action_number`, `input_value`.
-    - **First-Row Display Logic**: To improve readability, the `Test Case` and `Scenario` columns MUST follow a first-row-only display rule. Their values (e.g., TC1, the Gherkin narrative, etc.) MUST only be present on the first action row of each test case block. For all subsequent rows within the same test case block, these two columns MUST be left empty.
+    - **Columns**: `Test Case`, `Scenario`, `xpath`, `action_number`, `input_value`, `Expected Test Result`.
+    - **Display Logic**:
+        - **`Test Case` and `Scenario`**: These values MUST only be present on the **first** action row of each test case block. For all subsequent rows within the same block, these columns MUST be left empty.
+        - **`Expected Test Result`**: This value MUST only be present on the last action row of each test case block (the "submit" action). For all other rows, this column MUST be left empty.
 - **Submission**: Every test case must conclude with a form submission action (e.g., clicking a submit button).
-| Test Case | Scenario | xpath | action_number | input_value |
-| :--- | :--- | :--- | :--- | :--- |
-| TC-001v11 | Given I am an academic researcher with international collaborators, <br> When I fill out the inquiry form with valid, Unicode-based company and contact details, and a message containing an XSS payload, <br> Then my inquiry should be submitted successfully and the payload sanitized. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | 宇宙航空研究開発機構 |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | 星出 彰彦 |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | akihiko.hoshide@jaxa.jp |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | <script>alert('XSS')</script> |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-002v3 | Given I am a busy Product Manager, <br> When I try to submit the inquiry form with both the company and name fields empty, <br> Then I should see error messages for all missing required fields. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-003v1 | Given I am a user with very long but valid information, <br> When I fill the email field to its maximum allowed length, <br> Then the system should accept the submission without data truncation. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Stark Industries |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Tony Stark |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA@stark.com |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-004v1 | Given I am a user filling the form, <br> When I enter an email address that is missing the '@' symbol, <br> Then the system should reject the input and show a format validation error. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Cyberdyne Systems |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Miles Dyson |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | miles.dyson.cyberdyne.com |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-005v1 | Given I am a user filling the form, <br> When I enter an email address that is missing the domain part, <br> Then the system should reject the input and show a format validation error. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Wayne Enterprises |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Lucius Fox |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | lucius.fox@ |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-006v1 | Given I am a malicious user, <br> When I inject a simple XSS payload into the email field, <br> Then the system should reject the input due to invalid format and not execute the script. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Oscorp |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Norman Osborn |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | "><script>alert('xss')</script>@oscorp.com |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-007v1 | Given I am a nonprofit coordinator using a free email service, <br> When I fill out the inquiry form with my details, <br> Then my inquiry should be submitted successfully. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | The Daily Planet |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Clark Kent |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | clark.kent88@gmail.com |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-008v1 | Given I am a user with very long but valid information, <br> When I fill all fields to their maximum allowed length, <br> Then the system should accept the submission without data truncation. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | contact@verylongcompanyname.com |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM |
-| | | /HTML[1/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-009v1 | Given I am a user with very long but valid information, <br> When I fill all fields to their maximum allowed length, <br> Then the system should accept the submission without data truncation. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Procter & Gamble |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Jean-Luc O'Malley |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | jl.omalley@pg.com |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | Vi är intresserade av en demonstration av er mjukvara. |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
-| TC-010v1 | Given I am a user with very long but valid information, <br> When I fill all fields to their maximum allowed length, <br> Then the system should accept the submission without data truncation. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Acme Corporation |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Wile E. Coyote |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | w.coyote@acme.com |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | We are interested in your enterprise solution for our logistics and manufacturing divisions. Please provide information on pricing and on-premise deployment options. |
-| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | |
+- **Expected Test Result**: This column traces back to the `Expected Outcome` defined in the `Step 3: Test Case Design Matrix`. It is consolidated into a simple "Passed" or "FAILED" status.
+| Test Case | Scenario | xpath | action_number | input_value | Expected Test Result |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| TC-001v11 | Given I am an academic researcher with international collaborators, <br> When I fill out the inquiry form with valid, Unicode-based company and contact details, and a message containing an XSS payload, <br> Then my inquiry should be submitted successfully and the payload sanitized. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | 宇宙航空研究開発機構 | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | 星出 彰彦 | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | akihiko.hoshide@jaxa.jp | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | <script>alert('XSS')</script> | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | Passed |
+| TC-002v3 | Given I am a busy Product Manager, <br> When I try to submit the inquiry form with both the company and name fields empty, <br> Then I should see error messages for all missing required fields. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | FAILED |
+| TC-003v1 | Given I am a user with very long but valid information, <br> When I fill the email field to its maximum allowed length, <br> Then the system should accept the submission without data truncation. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Stark Industries | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Tony Stark | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA@stark.com | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | Passed |
+| TC-004v1 | Given I am a user filling the form, <br> When I enter an email address that is missing the '@' symbol, <br> Then the system should reject the input and show a format validation error. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Cyberdyne Systems | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Miles Dyson | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | miles.dyson.cyberdyne.com | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | FAILED |
+| TC-005v1 | Given I am a user filling the form, <br> When I enter an email address that is missing the domain part, <br> Then the system should reject the input and show a format validation error. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Wayne Enterprises | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Lucius Fox | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | lucius.fox@ | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | FAILED |
+| TC-006v1 | Given I am a malicious user, <br> When I inject a simple XSS payload into the email field, <br> Then the system should reject the input due to invalid format and not execute the script. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Oscorp | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Norman Osborn | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | "><script>alert('xss')</script>@oscorp.com | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | FAILED |
+| TC-007v1 | Given I am a nonprofit coordinator using a free email service, <br> When I fill out the inquiry form with my details, <br> Then my inquiry should be submitted successfully. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | The Daily Planet | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Clark Kent | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | clark.kent88@gmail.com | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | Passed |
+| TC-008v1 | Given I am a user with very long but valid information, <br> When I fill all fields to their maximum allowed length, <br> Then the system should accept the submission without data truncation. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | contact@verylongcompanyname.com | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | Passed |
+| TC-009v1 | Given I am a user with very long but valid information, <br> When I fill all fields to their maximum allowed length, <br> Then the system should accept the submission without data truncation. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Procter & Gamble | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Jean-Luc O'Malley | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | jl.omalley@pg.com | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | Vi är intresserade av en demonstration av er mjukvara. | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | Passed |
+| TC-010v1 | Given I am a user with very long but valid information, <br> When I fill all fields to their maximum allowed length, <br> Then the system should accept the submission without data truncation. | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[1] | 1 | Acme Corporation | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[2] | 1 | Wile E. Coyote | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/INPUT[3] | 1 | w.coyote@acme.com | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/TEXTAREA[1] | 1 | We are interested in your enterprise solution for our logistics and manufacturing divisions. Please provide information on pricing and on-premise deployment options. | |
+| | | /HTML[1]/BODY[1]/SECTION[6]/FORM[1]/BUTTON[1] | 0 | | Passed |
 # REQUIRED INPUTS
 ## Action Number Mapping:
 ```json
@@ -930,8 +955,7 @@ After performing the comprehensive audit and any necessary corrections as descri
   "1": "inputString"
 }
 ```
-""") + \
-"""## **Business Context**:
+""") + """## **Business Context**:
 `{business_context}`
 ## **User Personas & Stories**:
 `{user_personas_and_stories}`
@@ -942,7 +966,7 @@ After performing the comprehensive audit and any necessary corrections as descri
 ## Form XPath:
 `{form_xpath}`
 ## Page DOM Hierarchy:
-`{page_dom}`
+`{dom}`
 ## Provided Field XPaths:
 `{field_xpaths}`"""
         elif selector == "extract_web_info":
@@ -1106,7 +1130,6 @@ Always return results using this unified JSON structure:
   ]
 }
 ```
-
 ---
 
 """) + "{page_dom}"
