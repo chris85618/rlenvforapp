@@ -2,12 +2,13 @@ from RLEnvForApp.usecase.environment.autOperator.dto.CodeCoverageDTO import Code
 from RLEnvForApp.usecase.targetPage.dto.AppEventDTO import AppEventDTO
 
 class DirectiveDTO:
-    def __init__(self, url: str, dom: str, formXPath: str, appEventDTOs: [AppEventDTO], codeCoverageDTOs: [CodeCoverageDTO]):
+    def __init__(self, url: str, dom: str, formXPath: str, appEventDTOs: [AppEventDTO], codeCoverageDTOs: [CodeCoverageDTO], isDuplicatedTest: bool):
         self._url = url
         self._dom = dom
         self._formXPath = formXPath
         self._appEventDTOs = appEventDTOs
         self._codeCoverageDTOs = codeCoverageDTOs
+        self._isDuplicatedTest = isDuplicatedTest
 
     def getUrl(self) -> str:
         return self._url
@@ -23,3 +24,6 @@ class DirectiveDTO:
 
     def getCodeCoverageDTOs(self) -> [CodeCoverageDTO]:
         return self._codeCoverageDTOs
+
+    def isDuplicatedTest(self) -> bool:
+        return self.isDuplicatedTest

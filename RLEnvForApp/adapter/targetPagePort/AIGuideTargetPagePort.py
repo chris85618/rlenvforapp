@@ -109,15 +109,19 @@ class AIGuideTargetPagePort(ITargetPagePort):
             isFirst = False
 
     def pushTargetPage(self, target_page_id: str, episode_handler_id: str, highLevelActionList: HighLevelActionList):
+        # TODO: is first means its a successful test. THis part is tricky and needs to be revised.
+        is_first = True
         while highLevelActionList.is_done() == False:
             highLevelAction = highLevelActionList.get()
             directive_dto = self._createDirective(
                 targetPageId=target_page_id, episodeHandlerId=episode_handler_id, highLevelAction=highLevelAction)
             target_page_dto: TargetPageDTO = self._getTargetPage(targetPageId=target_page_id)
 
+            is_duplcated_test = (is_first == False)
             self._javaObjectPy4JLearningPool.enQueueLearningResultDTO(
-                self._createJavaObjectLearningResultDTO(target_page_dto.getTaskID(), directive_dto))
+                self._createJavaObjectLearningResultDTO(target_page_dto.getTaskID(), directive_dto, is_duplcated_test))
             self._saveTargetPageToHtmlSet(episode_handler_id, directive_dto)
+            is_first = False
             highLevelActionList.next()
         if not self._isTraining:
             self._removeTargetPage(target_page_id)
@@ -237,7 +241,7 @@ class AIGuideTargetPagePort(ITargetPagePort):
             crawljaxXpath += i
         return crawljaxXpath[:len(crawljaxXpath)-1]
 
-    def _createJavaObjectLearningResultDTO(self, taskId: str, directiveDTO: DirectiveDTO):
+    def _createJavaObjectLearningResultDTO(self, taskId: str, directiveDTO: DirectiveDTO, isDuplcatedTest: bool=False):
         javaObjectLearningTaskDTO = self._findJavaObjectLearningTaskDTOByTaskID(taskId)
         javaObjectHighLevelActionDTOs = self._createJavaObjectHighLevelActions(
             appEventDTOs=directiveDTO.getAppEventDTOs())
@@ -265,6 +269,8 @@ class AIGuideTargetPagePort(ITargetPagePort):
         # set original code coverage
         javaObjectLearningResultDTOBuilder.setOriginalCodeCoverageVector(
             javaObjectLearningTaskDTO.getCodeCoverageVector())
+        
+        javaObjectLearningResultDTOBuilder.setDuplicatedTest(isDuplcatedTest)
 
         javaObjectLearningResultDTOBuilder.setDone(False)
         return javaObjectLearningResultDTOBuilder.build()
