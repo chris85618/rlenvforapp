@@ -136,10 +136,21 @@ def getKeystoneJSDockerComposeFile(port: str = PORT):
           - nameOfMongoDB
         environment:
           - 'MONGO_URI=mongodb://nameOfMongoDB:27017/'
+        depends_on:
+          nameOfMongoDB:
+            condition: service_healthy
       nameOfMongoDB:
         image: ntutselab/mongo
+        tmpfs:
+          - /data/db
         ports:
           - '27001:27017'
+        healthcheck:
+          test: ["CMD-SHELL", "echo 'db.runCommand(\\"{{ ping: 1 }}\\").ok' | mongo localhost:27017/test --quiet"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+          start_period: 10s\n"
     '''
     return config
 
@@ -155,8 +166,19 @@ def getNodebbDockerComposeFile(port: str = PORT):
           - mongodb_1
         environment:
           - MONGO_HOST=mongodb_1
+        depends_on:
+          nameOfMongoDB:
+            condition: service_healthy
       mongodb_1:
         image: ntutselab/mongo
+        tmpfs:
+          - /data/db
+        healthcheck:
+          test: ["CMD-SHELL", "echo 'db.runCommand(\\"{{ ping: 1 }}\\").ok' | mongo localhost:27017/test --quiet"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+          start_period: 10s\n"
     '''
     return config
 
