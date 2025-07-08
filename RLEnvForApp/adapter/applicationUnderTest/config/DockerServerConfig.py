@@ -103,7 +103,7 @@ def dockerComposeFileContent(dockerImageCreator: str = DOCKER_IMAGE_CREATOR, app
 
 
 def createDockerComposeCommand(dockerComposePath: str):
-    return ["docker", "compose", "-f", dockerComposePath, "up", "-d"]
+    return ["docker", "compose", "-f", dockerComposePath, "up", "-d", "--wait"]
 
 
 def removeDockerComposeCommand(dockerComposePath: str):

@@ -46,9 +46,8 @@ class DockerServerHandler(ApplicationHandler):
     def _createDockerCompose(self, applicationName, port, dockerComposePath):
         compose_file_content = DockerServerConfig.dockerComposeFileContent(applicationName=applicationName,
                                                                            port=str(port))
-        compose_file = open(dockerComposePath, "w+")
-        compose_file.write(compose_file_content)
-        compose_file.close()
+        with open(dockerComposePath, "w+") as compose_file:
+            compose_file.write(compose_file_content)
 
     def _startServer(self, dockerComposePath, port):
         create_process = Popen(DockerServerConfig.createDockerComposeCommand(
