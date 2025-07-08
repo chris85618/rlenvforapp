@@ -112,26 +112,23 @@ class InputGeneratorHandler:
         self.format_instructions = self.parser.get_format_instructions()
 
     def get_response(self, dom, form_xpath:str, field_xpath_list:list[str]):
+        exception = None
         self.update_web_extracted_data(dom)
         # Form XPath
         formatted_form_xpath = XPathFormatter.format(form_xpath)
         # Field XPath List
         formatted_field_xpath_list = [XPathFormatter.format(field_xpath) for field_xpath in field_xpath_list]
         field_xpaths_str = "\n".join([f"- {field_xpath}" for field_xpath in formatted_field_xpath_list])
-        markdown_doc_str = self.llm_service.get_response(SystemPromptFactory.get("get_input_values"), MAX_INPUT_LENGTH=str(MAX_INPUT_LENGTH), dom=dom, form_xpath=field_xpaths_str, field_xpaths=field_xpath_list, quality_requirements=self.quality_requirements, tech_stack=self.tech_stack, user_personas_and_stories=self.user_personas_and_stories, business_context=self.business_context)
-        # markdown_doc_str = self.llm_service.get_response(SystemPromptFactory.get("get_input_values") + self.format_instructions.replace("{", "{{").replace("}", "}}"), MAX_INPUT_LENGTH=str(MAX_INPUT_LENGTH), dom=dom, form_xpath=field_xpaths_str, field_xpaths=field_xpath_list, quality_requirements=self.quality_requirements, tech_stack=self.tech_stack, user_personas_and_stories=self.user_personas_and_stories, business_context=self.business_context)
-        write_markdown(formatted_form_xpath, markdown_doc_str)
-        try:
-            high_level_action_list:HighLevelActionList = parse_markdown_to_HighLevelAction(markdown_doc_str, dom, form_xpath)
-        except ValueError as e:
-            print(markdown_doc_str)
-            print("================================================")
-            print("Failed to parse Markdown to HighLevelActionList.")
-            print("The above is the origin response from LLM")
-            raise
-        # test_combination_output_response:TestCombinationOutputResponse
-        # high_level_action_list = HighLevelActionList.fromTestCombinationOutputResponse(test_combination_output_response, page_dom=dom, form_xpath=formatted_form_xpath)
-        return high_level_action_list
+        for _ in range(3):
+            try:
+                markdown_doc_str = self.llm_service.get_response(SystemPromptFactory.get("get_input_values"), MAX_INPUT_LENGTH=str(MAX_INPUT_LENGTH), dom=dom, form_xpath=field_xpaths_str, field_xpaths=field_xpath_list, quality_requirements=self.quality_requirements, tech_stack=self.tech_stack, user_personas_and_stories=self.user_personas_and_stories, business_context=self.business_context)
+                # markdown_doc_str = self.llm_service.get_response(SystemPromptFactory.get("get_input_values") + self.format_instructions.replace("{", "{{").replace("}", "}}"), MAX_INPUT_LENGTH=str(MAX_INPUT_LENGTH), dom=dom, form_xpath=field_xpaths_str, field_xpaths=field_xpath_list, quality_requirements=self.quality_requirements, tech_stack=self.tech_stack, user_personas_and_stories=self.user_personas_and_stories, business_context=self.business_context)
+                write_markdown(formatted_form_xpath, markdown_doc_str)
+                high_level_action_list:HighLevelActionList = parse_markdown_to_HighLevelAction(markdown_doc_str, dom, form_xpath)
+                return high_level_action_list
+            except Exception as e:
+                exception = e
+        raise exception
 
     def update_web_extracted_data(self, page_dom):
         if self.quality_requirements is None or self.tech_stack is None or self.user_personas_and_stories is None or self.business_context is None:
