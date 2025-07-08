@@ -120,7 +120,13 @@ def getTimeoffDockerComposeFile(port: str = PORT):
       timeoff_management_with_coverage_{port}:
         image: ntutselab/timeoff_management_with_coverage
         ports:
-        - "127.0.0.1:{port}:3000"
+        - "{port}:3000"
+        healthcheck:
+          test: ["CMD", "wget", "--spider", "-q", "-S", "-O", "/dev/null", "http://localhost:3000/login/"]
+          interval: 2s
+          timeout: 1s
+          retries: 25
+          start_period: 280s
     '''
     return config
 
@@ -136,6 +142,12 @@ def getKeystoneJSDockerComposeFile(port: str = PORT):
           - nameOfMongoDB
         environment:
           - 'MONGO_URI=mongodb://nameOfMongoDB:27017/'
+        healthcheck:
+          test: ["CMD-SHELL", "node -e \\"require('http').request('http://localhost:3000/keystone', {{timeout: 3000}}, res => process.exit(res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1)).end()\\""]
+          interval: 2s
+          timeout: 1s
+          retries: 25
+          start_period: 460s
         depends_on:
           nameOfMongoDB:
             condition: service_healthy
@@ -147,10 +159,10 @@ def getKeystoneJSDockerComposeFile(port: str = PORT):
           - '27001:27017'
         healthcheck:
           test: ["CMD-SHELL", "echo 'db.runCommand(\\"{{ ping: 1 }}\\").ok' | mongo localhost:27017/test --quiet"]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-          start_period: 10s\n"
+          interval: 2s
+          timeout: 1s
+          retries: 25
+          start_period: 10s
     '''
     return config
 
@@ -166,8 +178,14 @@ def getNodebbDockerComposeFile(port: str = PORT):
           - mongodb_1
         environment:
           - MONGO_HOST=mongodb_1
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:4567"]
+          interval: 2s
+          timeout: 1s
+          retries: 25
+          start_period: 160s
         depends_on:
-          nameOfMongoDB:
+          mongodb_1:
             condition: service_healthy
       mongodb_1:
         image: ntutselab/mongo
@@ -175,10 +193,10 @@ def getNodebbDockerComposeFile(port: str = PORT):
           - /data/db
         healthcheck:
           test: ["CMD-SHELL", "echo 'db.runCommand(\\"{{ ping: 1 }}\\").ok' | mongo localhost:27017/test --quiet"]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-          start_period: 10s\n"
+          interval: 2s
+          timeout: 1s
+          retries: 25
+          start_period: 10s
     '''
     return config
 
@@ -189,7 +207,13 @@ def getDjangoBlogDockerComposeFile(port: str = PORT):
       django_blog_with_no_coverage_{port}:
         image: lidek213/django-blog_for_experiment
         ports:
-          - "127.0.0.1:{port}:3000"
+          - "{port}:3000"
+        healthcheck:
+          test: ["CMD", "wget", "--spider", "-q", "-S", "-O", "/dev/null", "http://127.0.0.1:3000"]
+          interval: 2s
+          timeout: 1s
+          retries: 25
+          start_period: 280s
     '''
     return config
 
@@ -202,6 +226,12 @@ def getSpringPetclinicDockerComposeFile(port: str = PORT):
         command: java -jar /spring-petclinic/build/libs/spring-petclinic-2.6.0.jar /spring-petclinic/build/libs/spring-petclinic-2.6.0-plain.jar
         ports:
           - '{port}:8080'
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+          interval: 2s
+          timeout: 1s
+          retries: 25
+          start_period: 120s
     '''
     return config
 
