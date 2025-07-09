@@ -50,7 +50,7 @@ class HighLevelAction:
         return self.page_dom
 
     def getAppEventList(self) -> list[AppEvent]:
-        return self.app_event_dict.values()
+        return list(self.app_event_dict.values())
     
     def getAppEventByXpath(self, xpath:str) -> AppEvent:
         formatted_xpath = XPathFormatter.format(xpath)
