@@ -16,6 +16,7 @@ from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.CodeCover
 from RLEnvForApp.adapter.environment.autOperator.codeCoverageCollector.NoCodeCoverageCollector import \
     NoCodeCoverageCollector
 from RLEnvForApp.adapter.environment.autOperator.crawler.SeleniumCrawler import SeleniumCrawler
+from selenium.common.exceptions import NoSuchElementException
 from RLEnvForApp.adapter.llmService.Gemini import Gemini
 from RLEnvForApp.adapter.targetPagePort.FileManager import FileManager
 from RLEnvForApp.adapter.targetPagePort.factory.TargetPagePortFactory import TargetPagePortFactory
@@ -137,7 +138,7 @@ class LLMController:
 
             try:
                 reset_env_use_output = self._reset_environment()
-            except NosuchElementException:
+            except (NosuchElementException, NoSuchElementException):
                 continue
 
             target_page_url = reset_env_use_output.getTargetPageUrl()
@@ -340,7 +341,7 @@ class LLMController:
         try:
             reset_env_use_case.execute(reset_env_use_input, reset_env_use_output)
             return reset_env_use_output
-        except NosuchElementException:
+        except (NosuchElementException, NoSuchElementException):
             raise NosuchElementException("NoSuchElementException when reset environment")
         except RuntimeError:
             self.__aut_controller.resetAUTServer(True)
