@@ -10,7 +10,7 @@ class NosuchElementException(Exception):
 
 
 class InitiateToTargetActionCommand(IActionCommand.IActionCommand):
-    MAX_RETRY_TIMES = 1
+    MAX_RETRY_TIMES = 3
 
     def __init__(self, appEvents: [AppEvent], rootPath: str, formXPath: str):
         super().__init__(actionNumber=-1, actionType="init")
@@ -30,19 +30,9 @@ class InitiateToTargetActionCommand(IActionCommand.IActionCommand):
                 operator.resetCrawler(self._rootPath, self._formXPath)
                 Logger().info("=====start the initial action=====")
                 for appEvent in self._appEvents:
-                    xpath = appEvent.getXpath()
-                    value = appEvent.getValue()
-                    Logger().info(f"Xpath: {xpath}, value: {value}")
-                    try:
-                        operator.executeAppEvent(xpath=xpath, value=value)
-                    except KeyboardInterrupt:
-                        Logger.info("KeyboardInterrupt")
-                        raise
-                    except Exception as exception:
-                        Logger().info(f"InitiateToTargetActionCommand: Fail to find Xpath: {xpath}, value: {value}. Ignore...")
-                isSuccess = (operator.getElement(self._formXPath) is not None)
-                if isSuccess == False:
-                    Logger().info(f"InitiateToTargetActionCommand: Fail to locate target form.")
+                    Logger().info(f"Xpath: {appEvent.getXpath()}, value: {appEvent.getValue()}")
+                    operator.executeAppEvent(xpath=appEvent.getXpath(), value=appEvent.getValue())
+                isSuccess = True
             except KeyboardInterrupt:
                 Logger.info("KeyboardInterrupt")
                 raise

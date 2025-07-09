@@ -3,8 +3,8 @@ from RLEnvForApp.usecase.targetPage.dto.AppEventDTO import AppEventDTO
 
 
 def mappingAppEventFrom(appEventDTO: AppEventDTO):
-    appEvent = AppEvent(xpath=appEventDTO.getXpath(),
-                        value=appEventDTO.getValue(), category=appEventDTO.getCategory())
+    appEvent = AppEvent(xpath=str(appEventDTO.getXpath()),
+                        value=str(appEventDTO.getValue()), category=appEventDTO.getCategory())
     return appEvent
 
 

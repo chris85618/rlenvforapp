@@ -41,5 +41,8 @@ class IAUTOperator:
     def getFocusedAppElement(self) -> AppElement:
         pass
 
+    def isUrlEqualsTo(self, url) -> bool:
+        pass
+
     def getElement(self, xpath):
         pass

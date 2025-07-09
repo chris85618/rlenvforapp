@@ -138,5 +138,8 @@ class AIGUIDEOperator(IAUTOperator):
                 isRetry = retryTimes < retry
         return appElementDTOs
 
+    def isUrlEqualsTo(self, url) -> bool:
+        return url == self._crawler.getUrl()
+
     def getElement(self, xpath):
         return self._crawler.getElement(xpath)

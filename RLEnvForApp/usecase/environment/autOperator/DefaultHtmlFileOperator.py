@@ -77,5 +77,8 @@ class DefaultHtmlFileOperator(IAUTOperator):
         self._crawler.executeAppEvent(xpath=xpath, value=value)
         self._setSelectedAppElement()
 
+    def isUrlEqualsTo(self, url) -> bool:
+        return url == self._crawler.getUrl()
+
     def getElement(self, xpath):
         return self._crawler.getElement(xpath)

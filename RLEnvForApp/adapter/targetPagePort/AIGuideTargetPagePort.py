@@ -77,8 +77,16 @@ class AIGuideTargetPagePort(ITargetPagePort):
                 appEventDTOs = []
                 for javaObjectHighLevelActionDTO in javaObjectLearningTaskDTO.getHighLevelActionDTOList():
                     for javaObjectActionDTO in javaObjectHighLevelActionDTO.getActionDTOList():
-                        appEventDTO = AppEventDTO(xpath=javaObjectActionDTO.getXpath(
-                        ), value=javaObjectActionDTO.getValue(), category="")
+                        xpath = javaObjectActionDTO.getXpath()
+                        value = javaObjectActionDTO.getValue()
+                        category = ""
+                        if value is None:
+                            category = 0
+                        elif type(value) == str and len(value) == 0:
+                            category = 0
+                        elif type(value) == int:
+                            category = value
+                        appEventDTO = AppEventDTO(xpath=xpath, value=value, category=category)
                         appEventDTOs.append(appEventDTO)
 
                 codeCoverageVector = []
@@ -105,8 +113,8 @@ class AIGuideTargetPagePort(ITargetPagePort):
             directive_dto = self._createDirective(
                 targetPageId=target_page_id, episodeHandlerId=episode_handler_id, highLevelAction=highLevelAction)
             target_page_dto: TargetPageDTO = self._getTargetPage(targetPageId=target_page_id)
-
             is_duplcated_test = (is_first == False)
+
             self._javaObjectPy4JLearningPool.enQueueLearningResultDTO(
                 self._createJavaObjectLearningResultDTO(target_page_dto.getTaskID(), directive_dto, is_duplcated_test))
             self._saveTargetPageToHtmlSet(episode_handler_id, directive_dto)
