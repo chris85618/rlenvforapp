@@ -29,8 +29,20 @@ class Logger:
     def get_instance(cls):
         return cls._instance
 
+    def debug(self, message):
+        Logger._instance.logger.debug(message)
+
     def info(self, message):
         Logger._instance.logger.info(message)
+
+    def warning(self, message):
+        Logger._instance.logger.warning(message)
+
+    def error(self, message):
+        Logger._instance.logger.error(message)
+
+    def critical(self, message):
+        Logger._instance.logger.critical(message)
 
     def exception(self, message):
         Logger._instance.logger.exception(message)

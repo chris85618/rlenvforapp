@@ -16,7 +16,7 @@ from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.environment.autOperator.crawler.ICrawler import ICrawler
 from RLEnvForApp.usecase.environment.autOperator.dto.AppElementDTO import AppElementDTO
 
-EXPLICIT_WAITING_TIME = 4000
+EXPLICIT_WAITING_TIME = 5000
 EVENT_WAITING_TIME = 1000
 PAGE_WAITING_TIME = 1000
 CRAWLER_GOTO_ROOT_PAGE_TIMEOUT = 10
@@ -41,6 +41,9 @@ class SeleniumCrawler(ICrawler):
             try:
                 self._driver.get(self._rootPath)
                 isGoToRootPageSuccess = "http" in self.getUrl()
+            except KeyboardInterrupt:
+                Logger.info("KeyboardInterrupt")
+                raise
             except:
                 isGoToRootPageSuccess = False
             isTimeOut = not goToRootPageRetryCount < CRAWLER_GOTO_ROOT_PAGE_TIMEOUT
@@ -66,30 +69,67 @@ class SeleniumCrawler(ICrawler):
 
     def close(self):
         if self._driver is not None:
-            self._driver.close()
+            current_driver = self._driver
             self._driver = None
             self._driverWithWait = None
+            try:
+                current_driver.close()
+            except KeyboardInterrupt:
+                Logger.info("KeyboardInterrupt")
+                raise
+            except Exception:
+                try:
+                    current_driver.close()
+                except KeyboardInterrupt:
+                    Logger.info("KeyboardInterrupt")
+                    raise
+                except Exception:
+                    pass
+                Logger().warning("Failed to close browser. Just ignore...")
 
     def executeAppEvent(self, xpath: str, value: str):
         try:
-            element = self._driverWithWait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+            element = self._driverWithWait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+        except KeyboardInterrupt:
+            Logger.info("KeyboardInterrupt")
+            raise
         except Exception as exception:
-            Logger().info(f"SeleniumCrawlerWarning: No such element in xpath {xpath}")
+            Logger().error(f"SeleniumCrawler: No such element in xpath {xpath}")
             raise exception
 
         if value == "":
             try:
+                try:
+                    self._driverWithWait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+                except KeyboardInterrupt:
+                    Logger.info("KeyboardInterrupt")
+                    raise
+                except Exception as exception:
+                    Logger.warning(f"SeleniumCrawler: {xpath} can't be clicked during precondition check. Just ignore this...")
                 element.click()
                 time.sleep(EVENT_WAITING_TIME/1000)
+            except KeyboardInterrupt:
+                Logger.info("KeyboardInterrupt")
+                raise
             except Exception as exception:
-                Logger().info(f"SeleniumCrawler Warning: xpath: {xpath} can't be clicked")
+                Logger().warning(f"SeleniumCrawler Warning: xpath: {xpath} can't be clicked")
                 # raise exception
         else:
             try:
+                try:
+                    self._driverWithWait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+                except KeyboardInterrupt:
+                    Logger.info("KeyboardInterrupt")
+                    raise
+                except Exception as exception:
+                    Logger.warning(f"SeleniumCrawler: {xpath} can't be input during precondition check. Just ignore this...")
                 element.clear()
                 element.send_keys(value)
+            except KeyboardInterrupt:
+                Logger.info("KeyboardInterrupt")
+                raise
             except Exception as exception:
-                Logger().info(f"SeleniumCrawler Warning: xpath: {xpath} can't be input")
+                Logger().warning(f"SeleniumCrawler Warning: xpath: {xpath} can't be input")
                 # raise exception
 
     def getScreenShot(self):
@@ -154,6 +194,9 @@ class SeleniumCrawler(ICrawler):
                     # firefox_options.add_argument('--headless')  # no GUI display
                     driver = webdriver.Firefox(firefox_options=firefox_options)
                 isStartBrowser = True
+            except KeyboardInterrupt:
+                Logger.info("KeyboardInterrupt")
+                raise
             except:
                 retry += 1
                 if retry >= 10:
@@ -164,6 +207,9 @@ class SeleniumCrawler(ICrawler):
     def _getHtmlTagAttribute(self, element, attribute):
         try:
             attributeText = element.attrib[attribute]
+        except KeyboardInterrupt:
+            Logger.info("KeyboardInterrupt")
+            raise
         except Exception:
             attributeText = ""
         return attributeText
@@ -173,16 +219,22 @@ class SeleniumCrawler(ICrawler):
         try:
             label_element = html_parser.xpath(f"//label[@for='{element.attrib['id']}']")[0]
             label = label_element.text
+        except KeyboardInterrupt:
+            Logger.info("KeyboardInterrupt")
+            raise
         except:
             label = ""
         return label
 
     def _isInteractable(self, xpath):
         try:
-            element = self._driverWithWait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+            element = self._driverWithWait.until(EC.presence_of_element_located((By.XPATH, xpath)))
             if self._getHtmlTagAttribute(element=element, attribute="input") == "input" and self._getHtmlTagAttribute(element=element, attribute="type") == "hidden":
                 return False
             return element.is_displayed() and element.is_enabled()
+        except KeyboardInterrupt:
+            Logger.info("KeyboardInterrupt")
+            raise
         except Exception as exception:
             Logger().info(f"SeleniumCrawlerException: {exception}")
             return False

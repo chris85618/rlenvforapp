@@ -56,6 +56,9 @@ class ResetEnvironmentUseCase:
                 formXPath="")
         try:
             initiate_to_target_action_command.execute(operator=self._operator)
+        except KeyboardInterrupt:
+            Logger.info("KeyboardInterrupt")
+            raise
         except NosuchElementException:
             remove_target_page_use_case = RemoveTargetPageUseCase()
             remove_target_page_input = RemoveTargetPageInput(targetPageId=target_page.getId())

@@ -10,6 +10,8 @@ class NosuchElementException(Exception):
 
 
 class InitiateToTargetActionCommand(IActionCommand.IActionCommand):
+    MAX_RETRY_TIMES = 3
+
     def __init__(self, appEvents: [AppEvent], rootPath: str, formXPath: str):
         super().__init__(actionNumber=-1, actionType="init")
         self._appEvents = appEvents
@@ -31,8 +33,11 @@ class InitiateToTargetActionCommand(IActionCommand.IActionCommand):
                     Logger().info(f"Xpath: {appEvent.getXpath()}, value: {appEvent.getValue()}")
                     operator.executeAppEvent(xpath=appEvent.getXpath(), value=appEvent.getValue())
                 isSuccess = True
+            except KeyboardInterrupt:
+                Logger.info("KeyboardInterrupt")
+                raise
             except Exception as exception:
                 Logger().info(f"InitiateToTargetActionCommand Exception, {exception}")
                 retry += 1
-            if retry >= 10:
-                raise NosuchElementException("InitiateToTargetActionCommand Exception, retry 10 times")
+            if retry > self.MAX_RETRY_TIMES:
+                raise NosuchElementException(f"InitiateToTargetActionCommand Exception, retry {self.MAX_RETRY_TIMES} times")
