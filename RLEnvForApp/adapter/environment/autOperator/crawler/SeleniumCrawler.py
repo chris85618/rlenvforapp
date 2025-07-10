@@ -8,11 +8,15 @@ import numpy
 from lxml import etree
 from PIL import Image
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from RLEnvForApp.logger.logger import Logger
 from RLEnvForApp.usecase.environment.autOperator.crawler.ICrawler import ICrawler
 from RLEnvForApp.usecase.environment.autOperator.dto.AppElementDTO import AppElementDTO
 
+EXPLICIT_WAITING_TIME = 4000
 EVENT_WAITING_TIME = 1000
 PAGE_WAITING_TIME = 1000
 CRAWLER_GOTO_ROOT_PAGE_TIMEOUT = 10
@@ -24,6 +28,7 @@ class SeleniumCrawler(ICrawler):
         self._browserName = browserName
         self._rootPath = ""
         self._driver = None
+        self._driverWithWait = None
         self._appElementDTOs: [AppElementDTO] = []
         self._formXPath = "//form"
 
@@ -47,6 +52,7 @@ class SeleniumCrawler(ICrawler):
     def reset(self, rootPath: str, formXPath: str = ""):
         self.close()
         self._driver = self._getWebDriver()
+        self._driverWithWait = WebDriverWait(self._driver, EXPLICIT_WAITING_TIME / 1000.)
         if rootPath != "":
             self._rootPath = rootPath
         else:
@@ -61,10 +67,12 @@ class SeleniumCrawler(ICrawler):
     def close(self):
         if self._driver is not None:
             self._driver.close()
+            self._driver = None
+            self._driverWithWait = None
 
     def executeAppEvent(self, xpath: str, value: str):
         try:
-            element = self._driver.find_element_by_xpath(xpath=xpath)
+            element = self._driverWithWait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
         except Exception as exception:
             Logger().info(f"SeleniumCrawlerWarning: No such element in xpath {xpath}")
             raise exception
@@ -97,7 +105,7 @@ class SeleniumCrawler(ICrawler):
         for element in html_parser.xpath(f"{self._formXPath}//input | {self._formXPath}//textarea | {self._formXPath}//button"):
             elementXpath: str = html_parser.getpath(element)
             elementHref: str = self._getHtmlTagAttribute(element, "href")
-            webElement = self._driver.find_element_by_xpath(elementXpath)
+            webElement = self._driverWithWait.until(EC.presence_of_element_located((By.XPATH, elementXpath)))
             if self._isInteractable(elementXpath) and not self._shouldHrefBeIgnored(elementHref):
                 self._appElementDTOs.append(AppElementDTO(tagName=element.tag,
                                                           name=self._getHtmlTagAttribute(
@@ -171,7 +179,7 @@ class SeleniumCrawler(ICrawler):
 
     def _isInteractable(self, xpath):
         try:
-            element = self._driver.find_element_by_xpath(xpath=xpath)
+            element = self._driverWithWait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
             if self._getHtmlTagAttribute(element=element, attribute="input") == "input" and self._getHtmlTagAttribute(element=element, attribute="type") == "hidden":
                 return False
             return element.is_displayed() and element.is_enabled()
