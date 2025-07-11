@@ -14,12 +14,14 @@ class HTMLLogCrawler(ICrawler):
         self._html: str = ""
         self._targetPath: str = ""
         self._appElementDTOs: [AppElementDTO] = []
+        self._root = None
 
     def goToRootPage(self):
         folderPath, pageHTMLFileName = os.path.split(self._targetPath)
         pageJsonFileName = os.path.splitext(pageHTMLFileName)[0] + ".json"
 
         htmlParser = etree.parse(os.path.join(folderPath, pageHTMLFileName), etree.HTMLParser())
+        self._root = htmlParser.getroot()
         self._html = etree.tostring(htmlParser).decode("utf-8")
         self._appElementDTOs: [AppElementDTO] = []
 
@@ -82,3 +84,11 @@ class HTMLLogCrawler(ICrawler):
         except Exception:
             attributeText = ""
         return attributeText
+
+    def getElement(self, xpath: str):
+        if self._root is None:
+            return None
+        element_list = self._root.xpath(xpath)
+        if len(element_list) == 0:
+            return None
+        return element_list[0]

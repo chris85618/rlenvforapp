@@ -31,3 +31,6 @@ class ICrawler:
 
     def getUrl(self) -> str:
         pass
+
+    def getElement(self, xpath: str):
+        pass

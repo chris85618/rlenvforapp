@@ -137,3 +137,6 @@ class AIGUIDEOperator(IAUTOperator):
                 retryTimes += 1
                 isRetry = retryTimes < retry
         return appElementDTOs
+
+    def getElement(self, xpath):
+        return self._crawler.getElement(xpath)

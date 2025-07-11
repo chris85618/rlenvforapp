@@ -119,3 +119,6 @@ class IRobotOperator(IAUTOperator):
             codeCoverages.append(
                 CodeCoverage(codeCoverageType=i.getCodeCoverageType(), codeCoverageVector=i.getCodeCoverageVector()))
         return codeCoverages
+
+    def getElement(self, xpath):
+        return self._crawler.getElement(xpath)

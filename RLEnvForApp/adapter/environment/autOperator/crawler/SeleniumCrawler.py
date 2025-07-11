@@ -87,6 +87,15 @@ class SeleniumCrawler(ICrawler):
                     pass
                 Logger().warning("Failed to close browser. Just ignore...")
 
+    def getElement(self, xpath: str):
+        try:
+            return self._driverWithWait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+        except KeyboardInterrupt:
+            Logger.info("KeyboardInterrupt")
+            raise
+        except Exception:
+            return None
+
     def executeAppEvent(self, xpath: str, value: str):
         try:
             element = self._driverWithWait.until(EC.presence_of_element_located((By.XPATH, xpath)))

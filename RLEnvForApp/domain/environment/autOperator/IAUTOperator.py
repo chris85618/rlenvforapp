@@ -40,3 +40,6 @@ class IAUTOperator:
 
     def getFocusedAppElement(self) -> AppElement:
         pass
+
+    def getElement(self, xpath):
+        pass

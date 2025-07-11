@@ -76,3 +76,6 @@ class DefaultHtmlFileOperator(IAUTOperator):
     def _inputValue(self, xpath: str, value: str):
         self._crawler.executeAppEvent(xpath=xpath, value=value)
         self._setSelectedAppElement()
+
+    def getElement(self, xpath):
+        return self._crawler.getElement(xpath)
