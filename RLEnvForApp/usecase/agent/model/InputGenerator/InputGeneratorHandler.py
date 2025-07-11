@@ -120,6 +120,7 @@ class InputGeneratorHandler:
         formatted_field_xpath_list = [XPathFormatter.format(field_xpath) for field_xpath in field_xpath_list]
         field_xpaths_str = "\n".join([f"- {field_xpath}" for field_xpath in formatted_field_xpath_list])
         for _ in range(3):
+            markdown_doc_str = ""
             try:
                 markdown_doc_str = self.llm_service.get_response(SystemPromptFactory.get("get_input_values"), MAX_INPUT_LENGTH=str(MAX_INPUT_LENGTH), dom=dom, form_xpath=field_xpaths_str, field_xpaths=field_xpath_list, quality_requirements=self.quality_requirements, tech_stack=self.tech_stack, user_personas_and_stories=self.user_personas_and_stories, business_context=self.business_context)
                 # markdown_doc_str = self.llm_service.get_response(SystemPromptFactory.get("get_input_values") + self.format_instructions.replace("{", "{{").replace("}", "}}"), MAX_INPUT_LENGTH=str(MAX_INPUT_LENGTH), dom=dom, form_xpath=field_xpaths_str, field_xpaths=field_xpath_list, quality_requirements=self.quality_requirements, tech_stack=self.tech_stack, user_personas_and_stories=self.user_personas_and_stories, business_context=self.business_context)
@@ -128,6 +129,7 @@ class InputGeneratorHandler:
                 return high_level_action_list
             except Exception as e:
                 exception = e
+            print(markdown_doc_str)
         raise exception
 
     def update_web_extracted_data(self, page_dom):

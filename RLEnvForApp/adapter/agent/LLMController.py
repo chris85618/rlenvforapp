@@ -150,11 +150,17 @@ class LLMController:
             state = self.__aut_operator.getState()
 
             # Get current app element from crawler
-            app_element: AppElement = self.__aut_operator.getFocusedAppElement()
+            try:
+                app_element: AppElement = self.__aut_operator.getFocusedAppElement()
+            except KeyboardInterrupt:
+                raise
+            except Exception:
+                self._logger.warning(f"Fail to generate test cases for URL: {target_page_url} & Form XPathL {self.__target_form_xpath}.")
             if app_element is None:
                 if len(self.__aut_operator.getAllSelectedAppElements()) == 0:
                     self._remove_target_page()
-                break
+                self._logger.warning("Skip this form.")
+                continue
 
             # Get Selected XPath List
             app_element_list = self.__aut_operator.getAllSelectedAppElements()
