@@ -64,7 +64,6 @@ class AIGuideTargetPagePort(ITargetPagePort):
         while self._javaObjectPy4JLearningPool.isLearningTaskDTOQueueEmpty():
             time.sleep(1)
         self.pullTargetPage()
-        return True
 
     def pullTargetPage(self):
         isFirst = True
