@@ -123,9 +123,9 @@ def getTimeoffDockerComposeFile(port: str = PORT):
         - "{port}:3000"
         healthcheck:
           test: ["CMD", "wget", "--spider", "-q", "-S", "-O", "/dev/null", "http://localhost:3000/login/"]
-          interval: 2s
-          timeout: 1s
-          retries: 25
+          interval: 10s
+          timeout: 5s
+          retries: 10
           start_period: 280s
     '''
     return config
