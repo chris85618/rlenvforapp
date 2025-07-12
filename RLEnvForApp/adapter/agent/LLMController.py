@@ -352,12 +352,18 @@ class LLMController:
             reset_env_use_case.execute(reset_env_use_input, reset_env_use_output)
 
     def _get_default_value(self, url: str, high_level_action: HighLevelAction) -> Optional[HighLevelAction]:
-        # Check if the xpath is in the default value
-        result = HighLevelAction.fromHighLevelAction(high_level_action)
+        app_event_list: list[AppEvent] = []
         # Get default input values
         default_value_list = self._default_value_fetcher.get_xpath_default_value_dict(url)
         if default_value_list is None:
             return None
-        for xpath, default_value in default_value_list.items():
-            result.append(AppEvent(xpath, default_value, 1))
-        return result
+        for app_event in high_level_action.getAppEventList():
+            xpath = app_event.getXpath()
+            value = app_event.getValue()
+            category = app_event.getCategory()
+            # Use default value if it exists
+            default_value = self._default_value_fetcher.get_default_value(url, xpath)
+            if default_value is not None:
+                value = default_value
+            app_event_list.append(AppEvent(xpath, value, category))
+        return HighLevelAction(*app_event_list, page_dom=high_level_action.getPageDom(), form_xpath=high_level_action.getFormXPath())
