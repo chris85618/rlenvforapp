@@ -1,6 +1,8 @@
 import os
 import json
 import csv
+import re
+from typing import Match
 from typing import Optional
 from datetime import datetime
 from langchain.output_parsers import PydanticOutputParser
@@ -24,6 +26,14 @@ DESIGN_DOC_PATH = f"{DIRPATH}/{{xpath_replaced}}.md"
 
 MAX_INPUT_LENGTH=300
 times_record = {}
+
+def expand_repeated_chars(text_with_repeated_chars_abbr: str) -> str:
+    pattern = re.compile(r"\(String of (\d+) '(.|\s)' characters\)")
+    def expand_match(match: Match[str]) -> str:
+        count = int(match.group(1))
+        char_to_repeat = match.group(2)
+        return char_to_repeat * count
+    return pattern.sub(expand_match, text_with_repeated_chars_abbr)
 
 def write_markdown(form_xpath:str, content:str):
     used_xpath = form_xpath.upper().replace("/","_").replace("[","_").replace("]","_")
@@ -61,6 +71,8 @@ def parse_markdown_to_HighLevelAction(markdown_text:str, page_dom:str, form_xpat
     if start_line is None or end_line is None:
         raise ValueError("Failed to parse Markdown to HighLevelActionList.")
     table_lines = markdown_text.splitlines()[start_line:end_line]
+    # Replace repeated chars abbr. with actual ones.
+    table_lines = [expand_repeated_chars(line) for line in table_lines]
     # Convert Markdown Table to HighLevelActionList
     dict_reader = csv.DictReader(table_lines, delimiter="|")
     # skip first row, i.e. the row between the header and data

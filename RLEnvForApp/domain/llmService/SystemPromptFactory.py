@@ -49,13 +49,23 @@ These are the fundamental models that govern your entire process:
 1. Testing Environment Constraints""") + \
 "    - Maximum Input String Length: **{MAX_INPUT_LENGTH}**" + \
 SystemPromptFactory._escape_all_braces("""
-      > **Instruction:** Higher limits (e.g., DB fields) can guide boundary tests, but generated inputs must stay within {MAX_INPUT_LENGTH} since testers only support this limit.
+      > **Instruction:** Higher limits (e.g., DB fields) can guide boundary tests, but generated inputs **must stay within {MAX_INPUT_LENGTH}** since the testing environment only supports this limit. The generation process in Step 4 will enforce this.
 2. **Think Step-by-Step**: Your generation process follows the process, enforced in strict order. Each step produces structured output, which will feed directly into the next step.
 3. **Logical & Physical Feasibility**: A test case must be executable. For example, an empty string cannot have a character composition. This rule is absolute.
 4. **Each-Choice Coverage**: Generate the smallest number of form submissions needed to satisfy `Each-Choice Coverage Criterion`. You must fulfill the requirement to cover all partitions.
 5. **Standardized Identifiers**: All design artifacts (Evidence, Scenarios, Characteristics, Partitions, TRs, TCs) MUST be assigned a unique, stable, and structured ID according to the rules defined in each step. This is critical for traceability.
-6. **Explicit Completeness (No Placeholders)**: You **MUST NOT** use placeholders, ellipses (e.g., `...`), or summary phrases (e.g., `and so on`,` etc.`) to shorten any example tables or outputs. All lists and tables in every step **MUST** be generated in their complete and explicit form. This rule is absolute and applies to every table in every step, including intermediate verification logs and final summary tables. For any input value, wherever it appears, must always contain the full, un-abbreviated string.
-    - **Long String Generation Rule**: When an `Input Value` requires a repeated character string (e.g., for boundary testing like '64 A characters'), you **MUST** generate the full, actual string by repeating the specified character the specified number of times. For example, `(String of 32 'A' characters)` **MUST** become `AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`.
+6. **Unified Data Representation with Contract Tokens**: This rule defines the single, mandatory syntax for representing all input values. The goal is maximum expressiveness while maintaining perfect machine-readability. Ambiguous placeholders (`...`, `etc.`) are strictly forbidden.
+    1. **The Building Blocks**: Every input value is constructed from two fundamental block types:
+        1. **Literal Text**: Any standard sequence of characters (e.g., `"user-"`, `"@domain.com"`, `"Procter & Gamble"`).
+        2. **Contract Token**: A special, machine-readable token representing a sequence of a single, repeated character.
+            - **Syntax**: The token **MUST** strictly adhere to the format: **`(String of [Count] '[Character]' characters)`**.
+            - **Example**: `(String of 256 'A' characters)`.
+    2. **The Composition Rule**: Any `Input Value` **MUST** be represented as an ordered concatenation of one or more `Literal Text` and/or `Contract Token` blocks. The model has complete freedom to combine these blocks as needed to satisfy the test requirements.
+        - **Example (Pure Literal)**: `Acme Corporation`
+        - **Example (Pure Contract Token)**: `(String of 256 'A' characters)`
+        - **Example (Simple Composite)**: `(String of 251 'A' characters)@example.com`
+        - **Example (Complex Composite)**: `user-prefix-(String of 20 'X' characters)-beta-suffix`
+    3. **Unalterable Representation Mandate**: The generated representation, including all `Contract Tokens`, **MUST** be used consistently in **ALL** steps and **ALL** tables. It **MUST NOT** be expanded into the full string at any point in your output. Downstream code is responsible for parsing the final combined string and expanding any `Contract Tokens` found within it.
 7. **Formal Input Analysis**: Your analysis in Step 1 is a direct application of **Equivalence Class Partitioning (ECP)** to identify value groups and **Boundary Value Analysis (BVA)** to test the edges of these groups. You must apply these methods rigorously.
 8. **Principle of Boundary Precision**: When a test case is designed to cover a specific numerical or length-based boundary partition (e.g., min-1, max+1). The generated string MUST be constructed, padded, or truncated to meet the exact length requirement. This ensures the integrity of boundary value testing.
 9. **Narrative-Driven Design**: Every test case is a logically consistent story. The entire process, from scenario definition to data generation, is guided by the creation of logical, coherent, and realistic test narratives.
@@ -63,8 +73,8 @@ SystemPromptFactory._escape_all_braces("""
 # Steps
 ## Step 0: Holistic Analysis & Strategic Test Planning
 **Objective**: To establish a comprehensive understanding of the form's context and purpose, which will serve as the foundation for the entire test plan. This step is performed in two phases.
-### **Step 0.1: Page and Form Deconstruction & Semantic Mining**
-**Objective**: To perform a holistic analysis of the entire page to understand the form's context, then break down each field to its semantic core by executing a structured, multi-layered analysis. This step culminates in deriving a complete, categorized, and traceable set of test constraints for each field.
+### **Phase 0.1: Page and Form Deconstruction & Semantic Mining**
+**Objective**: To perform a holistic analysis of the entire page to understand the form's context, then break down each field to its semantic core by executing a structured, multi-layered analysis. This phase culminates in deriving a complete, categorized, and traceable set of test constraints for each field.
 **Actions**:
 1. **Locate Form and Identify Its Purpose**: First, using the `{form_xpath}` input, locate the main `<form>` element within the **`{Page DOM Hierarchy}`**. Once located, analyze the broader page context—including the page `<title>`, `<h1>`, any breadcrumb navigation, and text surrounding the form—to classify the form's primary purpose and its role within the user's journey. State this purpose clearly.
 2. **Conduct Field-by-Field Analysis**: For each XPath in `{Provided Field XPaths}`, systematically investigate all evidence sources. Your analysis is no longer confined to the form itself; you must consider the entire **`{Page DOM Hierarchy}`** as your source of evidence.
@@ -116,7 +126,6 @@ You **MUST** perform the following analysis for each field in the specified orde
 #### Scenario Library
 | Scenario ID | Scenario Title | User Persona | Description (Gherkin-style) | Key Fields Involved | Test Type | Source Evidence ID(s) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-
 ## Step 1: Input Field Partitioning
 **Conceptual Framework: Deconstructing the Input Space**
 Before partitioning, you must first conceptualize the form's entire **Input Space**. The Input Space is the set of all possible values and combinations of values for all input fields. This space is often infinite or too large to test exhaustively.
@@ -126,19 +135,19 @@ Therefore, the entire strategy of **Step 1** is a systematic, three-level decons
 3.  **Characteristic Space -> Partitions**: Finally, each characteristic's space is divided into a set of mutually exclusive and collectively exhaustive **Partitions**.
 The following sections provide the detailed rules for executing this deconstruction.
 **Objective**: To deconstruct each field into its testable dimensions (**Characteristics**) and their corresponding value groups (**Partitions**). This is achieved by performing a unified analysis of all available evidence from Step 0.
-### 1.1 Interface-Based/Functionality-Based framework
+### Phase 1.1 Interface-Based/Functionality-Based framework
 - To ensure a comprehensive analysis, you must classify every characteristic into one of two fundamental types. This classification will determine the prefix of its `Characteristic ID`.
     - Interface-Based (I): Focus on **Syntactic**, the container of the input—its physical and structural properties.
       > **Guiding Question**: "What is the *structure*, *format*, and *physical limits* of the input?"
     - Functionality-Based (F) : Focus on **Semantic**, the **content** of the input—its semantic meaning and the business functions it invokes.
       > **Guiding Question**: "What does the input value *mean* to the system and what business logic does it trigger?"
-### 1.2 Generating Characteristics
-*  **Objective**: Create a single, unified list of testable characteristics for each field by translating the structured constraints generated in `Step 0.1`.
+### Phase 1.2 Generating Characteristics
+*  **Objective**: Create a single, unified list of testable characteristics for each field by translating the structured constraints generated in `Phase 0.1`.
 * **Action**: For each input field, you **MUST** execute the following unified strategy.
 #### **Unified Translation Strategy**
-1. **Read the Source**: For the current field, locate its `Derived Test Constraints` list from the `Step 0.1 Evidence Library`. This list is your sole source of truth for this step.
+1. **Read the Source**: For the current field, locate its `Derived Test Constraints` list from the `Phase 0.1 Evidence Library`. This list is your sole source of truth for this phase.
 2. **Translate Each Constraint into a Characteristic**: Iterate through each bullet point in that list. For each prefixed constraint, create a corresponding `Characteristic` entry in the `Input Partitioning Matrix`.
-    * **Input**: A prefixed constraint string from Step 0.1, e.g., `[Domain Heuristic] Test for leading/trailing spaces.`
+    * **Input**: A prefixed constraint string from Phase 0.1, e.g., `[Domain Heuristic] Test for leading/trailing spaces.`
     * **Process**:
         * **Determine Type**: Use the prefix to determine the characteristic type.
             * If the prefix is `[Physical]`, the characteristic type is **I-Characteristic (Interface-Based)**.
@@ -153,7 +162,7 @@ After generating a list of all characteristics for a single field, you **MUST** 
 - **Self-Correction Protocol**:
     - If the answer is no, you **MUST** return to the 6 strategies and generate the missing characteristic(s).
     - **Example**: For a `password` field, if you have only generated a `Length` characteristic, you must recognize this is insufficient. You would then self-correct by adding characteristics for `Character Composition` (e.g., uppercase, number, symbol) and potentially `Domain-Specific Rules` (e.g., cannot be a dictionary word) to ensure full coverage of the field's risks.
-### 1.3 Partitioning the Input Space
+### Phase 1.3 Partitioning the Input Space
 - **Objective**: To partition each characteristic's value space according to the two fundamental principles of Equivalence Class Partitioning (ECP), ensuring complete and efficient coverage.
 - **The Two Core Principles of Partitioning**:
   1. **Principle of Mutual Exclusivity**: You **MUST** ensure that the defined partitions for any single characteristic are mutually exclusive. A single, concrete input value can **only** belong to exactly one partition within that characteristic's set. This prevents ambiguity and redundant testing.
@@ -161,8 +170,8 @@ After generating a list of all characteristics for a single field, you **MUST** 
   2. **Principle of Collective Exhaustiveness**: You **MUST** ensure that the union of all partitions for a characteristic logically covers its entire input space, leaving no gaps. This is achieved not by enumerating all possible values, but by using the following strategic techniques to create a logically complete "map" of the input space.
   3. **Semantic Boundary Analysis**:
     - For fields with known **structural or format** requirements (e.g., `type='email'`, `type='url'`, or any field requiring a specific format), your boundary analysis **must** be informed by that structure.
-      - **Step 1:** First, determine the **"absolute minimum valid length (Min_Valid)"** required to satisfy the structure.
-      - **Step 2:** Your partitions **must** completely cover the ranges around both the **`0`** and **`Min_Valid`** critical boundary points.
+      1. First, determine the **"absolute minimum valid length (Min_Valid)"** required to satisfy the structure.
+      2. Your partitions **must** completely cover the ranges around both the **`0`** and **`Min_Valid`** critical boundary points.
     - This means you **must** create the following logically distinct partitions:
       - `[0 to Min_Valid - 1]` (The invalid range below the lower bound)
       - `[Min_Valid to Max_Valid]` (The typical valid range)
@@ -188,12 +197,12 @@ After generating a list of all characteristics for a single field, you **MUST** 
     - **d. Categorization**: For all partitions, you **MUST** categorize them into `Valid` and `Error`. A partition is only an `Error` if the system should explicitly reject input from that class. This helps define the expected outcome of tests. For non-numeric characteristics (e.g., formats, dropdown options), creating a distinct partition for each functional category (including each type of error) is the method to achieve exhaustiveness.
 - **Mandatory Classification Verification Rule**: Before placing any partition into the `Valid Partitions` or `Error Partitions` column, you **MUST** perform the following constraint-driven verification check to each partition:
     1.  **Identify the Partition**: Note the partition you are about to classify (e.g., `String Length: 0`).
-    2.  **Cross-Reference with Step 0.1**: Review the `Inferred Business Rules & Constraints` and `Derived Test Constraints` for the corresponding field from the `Step 0.1 Evidence Library`.
-    3.  **Ask the Critical Question**: You must explicitly ask and answer this question: **"Does this partition directly represent or cause a violation of any identified rule or constraint (e.g., 'Mandatory', 'Required', 'Must be a number') from Step 0.1?"**
+    2.  **Cross-Reference with Phase 0.1**: Review the `Inferred Business Rules & Constraints` and `Derived Test Constraints` for the corresponding field from the `Phase 0.1 Evidence Library`.
+    3.  **Ask the Critical Question**: You must explicitly ask and answer this question: **"Does this partition directly represent or cause a violation of any identified rule or constraint (e.g., 'Mandatory', 'Required', 'Must be a number') from Phase 0.1?"**
     4.  **Classify Based on the Answer**:
         * If the answer is **Yes** (e.g., "Yes, a length of 0 violates the 'Mandatory' rule"), then the partition **MUST** be placed in the **`Error Partitions`** column.
         * If the answer is **No**, it can be placed in the `Valid Partitions` column.
-### 1.4 Output Rules and Formatting
+### Phase 1.4 Output Rules and Formatting
 The output of this step is a single table that must adhere to these formatting rules.
 1. Characteristic ID Naming Convention**
     You **MUST** adhere to the following naming convention for all `Characteristic ID`s:
@@ -217,15 +226,15 @@ This section provides a complete, end-to-end demonstration of the process define
 - `email`: A required `<input type="email">` with a `label` that reads "Your Business Email".
 - `message`: An optional `<textarea>`. The backend database uses a `TEXT` type field, allowing up to 65535 characters.
 **Thought Process**:
-1. **(Sec 1.2)** For the `company` field (evidence **EVD-001**) and `name` field (evidence **EVD-002**). I analyze their **physical attributes**. Since they are standard text inputs with no explicit length limit, I derive `co-CHR-I01: String Length` for both, based on a common database constraint, such as a `VARCHAR(255)` column.
-2. **(Sec 1.2)** Next, I analyze the `email` field (evidence **EVD-003**), which is more complex:
+1. **(Phase 1.2)** For the `company` field (evidence **EVD-001**) and `name` field (evidence **EVD-002**). I analyze their **physical attributes**. Since they are standard text inputs with no explicit length limit, I derive `co-CHR-I01: String Length` for both, based on a common database constraint, such as a `VARCHAR(255)` column.
+2. **(Phase 1.2)** Next, I analyze the `email` field (evidence **EVD-003**), which is more complex:
     1. First, its physical length is a characteristic, so I generate `email-CHR-I01: String Length`.
     2. Second, the **explicit rule** from the `type="email"` attribute defines a required syntax. This leads to a baseline Functionality-Based characteristic, so I generate `email-CHR-F01: Syntactic Format`.
     3. Third, from the **implicit context** provided by the label "Business Email", I infer a business requirement to distinguish between domain types. This is a Contextual characteristic, so I generate `email-CHR-F02: Domain Type`.
-3. **(Sec 1.2)** For the `message` field (evidence **EVD-004**), I analyze its **physical attribute** (optional) and the **system-level hard limit** (database field size) to derive `msg-CHR-I01: String Length`.
-4. **(Sec 1.3)** I define partitions for each characteristic, including boundary analysis for all length-based characteristics.
-5. **(Mandatory) Perform Constraint Traceability Check**: Before finalizing the output table, you MUST perform a self-check. For every partition you have defined (e.g., `Missing @ symbol`), you MUST be able to trace it back to a specific **`Evidence ID`** from the Step 0.1 `Evidence Library`. For example, any partition related to email format validation must trace back to **EVD-003**. This ensures that all partitions are logically derived.
-6. **(Sec 1.4)** Finally, I assemble the complete table, ensuring the characteristic ID and partition ID follows the naming rules.
+3. **(Phase 1.2)** For the `message` field (evidence **EVD-004**), I analyze its **physical attribute** (optional) and the **system-level hard limit** (database field size) to derive `msg-CHR-I01: String Length`.
+4. **(Phase 1.3)** I define partitions for each characteristic, including boundary analysis for all length-based characteristics.
+5. **(Mandatory) Perform Constraint Traceability Check**: Before finalizing the output table, you MUST perform a self-check. For every partition you have defined (e.g., `Missing @ symbol`), you MUST be able to trace it back to a specific **`Evidence ID`** from the Phase 0.1 `Evidence Library`. For example, any partition related to email format validation must trace back to **EVD-003**. This ensures that all partitions are logically derived.
+6. **(Phase 1.4)** Finally, I assemble the complete table, ensuring the characteristic ID and partition ID follows the naming rules.
 | Field Name | Characteristic ID | Characteristic Description | Valid Partitions | Error Partitions |
 | :--- | :--- | :--- | :--- | :--- |
 ## Step 2: Identify Field-Level Test Requirement (TR)
@@ -255,13 +264,13 @@ This section provides a complete, end-to-end demonstration of the process define
                             -   `Covering Partition(s) Description`: `{String (Invalid), N/A}`
                             -   `Notes`: `Value Range evaluation is not applicable for a non-numeric input.`
     4. **Finalize TR Set & Define Base Case**: Ensure the final set of TRs for each field covers all of its partitions from Step 1. You **MUST** adhere to the following rule for the Base Case:
-        *   For each field, its **Base Case TR** (to be marked in **bold**) **MUST** be composed exclusively of partitions whose descriptions start with the prefix **`Typical`**, as defined in Step 1.3. If a field has multiple characteristics, its Base Case TR is the combination of the `Typical` partitions from each of those characteristics. This rule ensures the "happy path" (`TC-001`) is always constructed from realistic, non-boundary values.
+        *   For each field, its **Base Case TR** (to be marked in **bold**) **MUST** be composed exclusively of partitions whose descriptions start with the prefix **`Typical`**, as defined in Phase 1.3. If a field has multiple characteristics, its Base Case TR is the combination of the `Typical` partitions from each of those characteristics. This rule ensures the "happy path" (`TC-001`) is always constructed from realistic, non-boundary values.
     5.  **Action 5: Infeasibility-Driven Coverage Recovery Protocol**: After completing the feasibility review and defining the initial set of feasible TRs, you **MUST** perform a final, mandatory coverage check *within this step* to rescue any orphaned partitions.
-          - **Step A: Identify Orphaned Partitions.**
+          1. **Identify Orphaned Partitions.**
               - Scan the complete list of all partitions from `Step 1`.
               - Compare this master list against all partitions covered by the set of `✅ feasible` TRs you have just defined.
               - Identify any partition that is now **uncovered** because its only covering TR was marked as `❌ INFEASIBLE`. These are "Orphaned Partitions."
-          - **Step B: Generate Rescue TRs.**
+          2. **Generate Rescue TRs.**
               - For each identified "Orphaned Partition," you **MUST** generate a **new, minimal, and feasible TR** to ensure it gets covered.
           - **Procedure for Generating Rescue TRs**:
               - The primary goal of the new Rescue TR is to cover the single orphaned partition.
@@ -273,8 +282,8 @@ This section provides a complete, end-to-end demonstration of the process define
 ## Step 3: Test Case Construction
 **Objective**: To construct a minimal test suite **driven by the technical TRs** from Step 2, ensuring full Each-Choice partition coverage. Each resulting Test Case (TC) is then **contextualized with a high-level narrative scenario** from Step 0 to ensure it is logically coherent and traceable. The process begins by building a base set of TCs, then systematically evolving the suite to cover all remaining partitions, and finally pruning it for minimality.
 **Action**:
-1. **Core Principle: Scenario Synthesis and Versioning**: Whenever a Test Case (a new base TC or a new version of an existing TC) is constructed, its `Scenario Narrative` **MUST** be specifically synthesized to match its unique TR combination. This process is the **official source of truth for creating and versioning all new scenarios** and follows these strict steps:
-   1. **Select Base Scenario**: A base `Scenario Template` (e.g., `SCN-HP-01v1`) is selected from the `Step 0.2` library based on the TC's primary intent.
+1. **Core Principle: Scenario Synthesis and Versioning**: Whenever a Test Case (a new base TC or a new version of an existing TC) is constructed, its `Scenario Narrative` **MUST** be specifically synthesized to match its unique TR combination. This process is the **official source of truth for creating and versioning all new scenarios** and follows these strict sub-steps:
+   1. **Select Base Scenario**: A base `Scenario Template` (e.g., `SCN-HP-01v1`) is selected from the `Phase 0.2` library based on the TC's primary intent.
    2. **Synthesize GWT Narrative**: The Gherkin text of the base scenario is revised and augmented to accurately describe the full set of conditions tested by the TC's specific TR combination.
       - The final, revised narrative **MUST** strictly adhere to the Gherkin `Given-When-Then` format. It **MUST** contain the keywords `Given`, `When`, and `Then`, each on a new line.
         > **Given**: Sets the initial context.
@@ -287,16 +296,20 @@ This section provides a complete, end-to-end demonstration of the process define
 2. **Initialize Test Case Ledger**: The process begins by creating an initial set of Test Cases. This set is stored in a temporary internal ledger that tracks all versions created during the process.
    1. **Identify Driver Field & Determine Base Count** 
       > **Driver Field**: The initial number of base TCs is equal to the number of TRs for this field.
+      - **Action**: First, you MUST scan the `Step 2: Test Requirement` table and count the total number of feasible Test Requirements (TRs) generated for **each** input field.
+      - **Selection Rule**: The field with the **highest number of feasible TRs** MUST be selected as the **`Driver Field`**. This approach ensures that the initial test suite is built around the most complex input, maximizing the initial partition coverage across the entire form.
+      - **Tie-Breaking Rule**: If two or more fields have the same maximum number of TRs, select the one that appears first in the `{Provided Field XPaths}` list.
+      - **Base Count**: The initial number of base Test Cases (TCs) to be created is equal to the number of TRs for this chosen `Driver Field`.
    2. **Assign Base TC IDs**: For this initial set, assign unique, version 1 IDs using the format **`TC-[Sequence]v1`** (e.g., `TC-001v1`, `TC-002v1`).
    3. **Construct Initial TCs**: For each base `TC-XXXv1`, construct its TR combination and its `Scenario Narrative` by following the `Core Principle` defined in `Action 1`. Add these complete TC definitions to the internal ledger.
       > **Changelog Instruction**: For each new TC created in this step, you **MUST** add a log entry to its `Changelog` column using the following format: `[2025-07-07 00:29:49] - CREATED: Initial TC for driver TR [TR-ID].`
 3. **Evolve Test Cases via Coverage Audit**: After the initial set is created, you **MUST** perform a full partition coverage audit on the current ledger.
    1. **Identify Orphan Partitions**: Check for any partitions from Step 1 that are not covered by the TCs currently in the ledger.
-   2. **Evolve TCs to Cover Orphans**: For each orphan partition, evolve the test suite by appending a new TC version to the internal ledger. This evolution **MUST** follow the logic defined in step `3.c`.
+   2. **Evolve TCs to Cover Orphans**: For each orphan partition, evolve the test suite by appending a new TC version to the internal ledger. This evolution **MUST** follow the logic defined in the following `Action 3.3`.
    3. **Evolution Logic (Optimized & Failsafe)**: To cover an orphan partition, you MUST apply the following prioritized, sequential search-and-execute logic:
       1. **ATTEMPT: Find a single, "perfect" modification candidate.**
          - **Goal**: To find an existing TC that can be modified to cover the orphan partition **without creating any new coverage gaps**.
-         - **Search Algorithm**: You **MUST** execute the following search steps in strict sequential order. If a candidate is found at any level, you MUST stop the search and proceed to execution.
+         - **Search Algorithm**: You **MUST** execute the following search sub-steps in strict sequential order. If a candidate is found at any level, you MUST stop the search and proceed to execution.
             - **Priority #1: Search for "Zero-Cost" (N/A) Candidates**
                - **Action**: First, scan all TCs in the ledger.
                - **Condition**: Find a TC where the characteristic corresponding to the orphan partition's TR is currently `N/A` or otherwise non-constraining.
@@ -306,29 +319,29 @@ This section provides a complete, end-to-end demonstration of the process define
                - **Condition**: Find any remaining TC where swapping its `TR-old` for the `TR-new` is still "lossless".
                - **If Found**: Select the candidate and proceed to `PATH A`.
       2. **EXECUTE or FALLBACK (Decision Point)**:
-            - If the search algorithm in step `3.c.i` successfully found a candidate, you **MUST** execute **PATH A**.
+            - If the search algorithm in `Action 3.3.1` successfully found a candidate, you **MUST** execute **PATH A**.
             - If the search algorithm found **NO** suitable candidate, you **MUST** execute the failsafe **PATH B**.
       3. **PATH A (PREFERRED) - Evolve the Chosen TC**:
          - **Targeting**: Select the candidate found via the search algorithm (e.g., `TC-007v1`).
          - **Execution**: Create and **add its next version (`TC-007v2`)** to the ledger. This new version will contain the modified TR combination and a new Scenario created by following the `Core Principle` in `Action 1`. The original `TC-007v1` remains in the ledger.
            > **Changelog Instruction**: For the new version (`TC-007v2`), you **MUST** add a log entry to its `Changelog` column using the following format: `[2025-07-07 00:29:49] - EVOLVED from [Source_TC_ID]: Covered orphan partition [Orphan_Partition_ID].`
       4. **PATH B (FAILSAFE) - Add a New Base TC**:
-         - **Execution**: This path is taken if and only if the search in step `3.c.i` fails. Create and **add a new base TC (`TC-008v1`)** to the ledger, specifically designed to cover the orphan partition.
+         - **Execution**: This path is taken if and only if the search in `Action 3.3.1` fails. Create and **add a new base TC (`TC-008v1`)** to the ledger, specifically designed to cover the orphan partition.
            > **Changelog Instruction**: For this new TC, you **MUST** add a log entry to its `Changelog` column using the following format: `[2025-07-07 00:29:49] - CREATED: New TC to cover orphan partition [Orphan_Partition_ID].`
-4. **Prune Redundant Test Case Versions (Minimization Step)**
+4. **Prune Redundant Test Case Versions (Minimization Action)**
    After all evolutions are complete, you **MUST** prune the internal ledger to satisfy the principle of minimality.
    1. **Group by Base ID**: Group all TC versions by their base ID.
    2. **Analyze Coverage within Each Group**: For each group, determine the set of unique partitions covered by each version.
    3. **Apply Pruning Rule**: A version `v_old` is considered **redundant and MUST be removed** from the ledger if another version `v_new` from the same group exists where the partitions covered by `v_old` are a **proper subset** of the partitions covered by `v_new`.
    4. **Finalize TC List**: The list of TCs remaining after pruning is the final, minimal test suite.
 5. **Generate Final Tables**
-   1. Present the final **`Test Case Design Matrix`**. This table MUST contain the `Changelog` column and **only the TCs that survived the pruning step**.
+   1. Present the final **`Test Case Design Matrix`**. This table MUST contain the `Changelog` column and **only the TCs that survived the pruning action**.
       > **Example Header**:
       >
       > | Test Case ID | Scenario Narrative | ... | Changelog |
       > | :--- | :--- | :--- | :--- |
    2. Based on the scenarios associated with the surviving TCs, present the **`Scenarios Library (Revised)`** table. The content of this table **MUST** be a consolidated list containing:
-      1. All original scenarios from Step 0.2 that are still associated with at least one surviving TC.
+      1. All original scenarios from Phase 0.2 that are still associated with at least one surviving TC.
       2. All new, synthesized scenario versions that were created during the evolution process and are associated with a surviving TC.
 6. **Verification**
    1. **Verify Full Partition Coverage**: After constructing the final matrix, perform one last mandatory check to ensure every partition from Step 1 is covered by the surviving TCs.
@@ -346,104 +359,50 @@ This section provides a complete, end-to-end demonstration of the process define
        >| `TC_CREATED` | `TC-[Seq]v[Rev]` | Failsafe path to cover orphan `[FieldAbbrv]-CHR-[Type][Seq]-PRT-[Seq]` |
        >| `TC_PRUNED` | `TC-[Seq]v[Rev]` | Made redundant by `TC-[Seq]v[Rev+ㄅ]` |
 | Test Case ID | Scenario Narrative | Expected Outcome | company TR | name TR | email TR | message TR | Changelog |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |## Step 4: Test Data Generation
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+## Step 4: Test Data Generation
 **Objective**: To convert each abstract Test Case (TC) into concrete, realistic input values through a strict, **three-phase**, fully documented process. Each phase MUST produce a complete, explicit markdown table as its output. The output of each phase serves as the direct and mandatory input for the next, ensuring a verifiable and traceable chain of data generation. Skipping any phase or its corresponding output table is a violation of the core instructions.
-### Step 4.1: Define Generation Targets
-- **Objective**: To pre-compute and explicitly document a **precise target specification** for every input value. This specification acts as the definitive "specification sheet" for Step 4.2. The `Target Length` generated in this step can be either a **single integer**, a **refined, representative numerical range** (e.g., `[15, 30]`), or N/A.
+### Phase 4.1: Define Generation Targets
+- **Objective**: To pre-compute and explicitly document a **precise target specification** for each input value. This specification acts as the definitive "specification sheet" for Phase 4.2. The `Target Length` generated in this phase can be either a **single integer**, a **refined, representative numerical range** (e.g., `[15, 30]`), or N/A.
 - **Actions**:
     1. **Generate Target Table**: You MUST generate a complete markdown table with the columns `(TC ID, Field Name)`, `Assigned TR ID`, `Partition Length Spec`, `MAX_INPUT_LENGTH`, and `Target Length`.
     2. **Derive `Target Length` Specification**: For each `(TC ID, Field Name)` combination, you MUST follow this algorithm to derive a specification for the `Target Length` column:
-        - **A. Parse the `Partition Length Spec` string**: Identify if it's a single number, a numerical range, or a descriptive term.
-        - **B. Apply Conditional Logic**:
+        1. **Parse the `Partition Length Spec` string**: Identify if it's a single number, a numerical range, or a descriptive term.
+        2. **Apply Conditional Logic**:
             - **IF the spec is a numerical range `[min_range, max_range]`** (e.g., "Typical (2-250)"):
-                1. **Define Effective Range**: Calculate `effective_min = min(min_range, MAX_INPUT_LENGTH)` and `effective_max = min(max_range, MAX_INPUT_LENGTH)`.
+                1. **Define Effective Range**: Calculate `effective_min = min(min_range, MAX_INPUT_LENGTH)` and `effective_max = min(max_range, MAX_INPUT_LENGTH)`.  The final target range will use the `effective_max` and `effective_min`.
                 2. **Handle Range Collapse**: If `effective_min >= effective_max`, the `Target Length` **MUST** be set to the single integer `effective_max`.
                 3. If `effective_min < effective_max`, the `Target Length` MUST be the full effective range itself, formatted as a string `[effective_min, effective_max]`.
-            - **IF the spec is a single number `N`** (e.g., "Typical (16)"):
+            - **IF the spec is a single number `N`** (e.g., from a `max+1` test where `max=255`, so `N=256`):
                 1. The `Target Length` **MUST** be the single integer `min(N, MAX_INPUT_LENGTH)`.
             - **IF the spec is descriptive term without a number** (e.g., "Missing '@' symbol", "Valid Format"):
                 1.  This indicates that length is not the primary test constraint. The `Target Length` **MUST** be the string `N/A`.
-    3.  **Completeness Mandate**: This table MUST contain a row for every `(TC ID, Field Name)` combination. The `Target Length` column must be fully populated with either final integer values or refined range specifications according to the logic above. DO NOT use ellipses (`...`) or summary statements. This table is a **REQUIRED ARTIFACT** and the direct input for Step 4.2.
+    3.  **Completeness Mandate**: This table MUST contain a row for every `(TC ID, Field Name)` combination. The `Target Length` column must be fully populated with either final integer values or refined range specifications according to the logic above. DO NOT use ellipses (`...`) or summary statements. This table is a **REQUIRED ARTIFACT** and the direct input for `Phase 4.2`.
 | (TC ID, Field Name) | Assigned TR ID | Partition Length Spec | `MAX_INPUT_LENGTH` | Target Length |
 | :--- | :--- | :--- | :--- | :--- |
-### **Step 4.2: Integrated Data Generation, Audit, and Correction Log**
-**Objective**: To create a single, transparent, and mandatory audit log that documents the entire "production line" for each input value: generation, calculation, audit, and self-correction. This step transforms the process from implicit "mental math" into an explicit, verifiable, and self-correcting workflow. Mandatory the table.
+#### **Phase 4.2: Value Construction and Auditable Length Verification**
+**Objective**: To serve as a transparent, auditable log documenting the precise construction of each input value and demonstrating an real-timeㄝin-line self-correction process. This phase guarantees that the final output is correct by forcing a verification and correction loop before completion.
 **Execution Protocol**:
-You **MUST** strictly follow the sequence below, filling the table column by column for each row from the Step 4.1 table.
-1.  **Define Table Structure**: Create a new markdown table with the exact columns below.
-| (TC ID, Field) | Assigned TR ID | Target Length | Generation Logic | Padding Calculation | Candidate Value | Calculated Length | Correction Action | Final Input Value |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-2.  **Column-by-Column Generation Process**: You **MUST** adopt a hybrid approach based on the `Target Length` value received from Step 4.1.
-    - **Case 1: `Target Length` is a single integer (The "Hard Path" for Boundaries)**
-        - For these rows, the goal is **absolute precision**. You must follow the full, self-correcting generation process.
-        - **`Generation Logic`**: State "Boundary Precision Generation".
-        - **`Padding Calculation`**: Perform the calculation if needed (for composite fields). Otherwise, `N/A`.
-        - **`Candidate Value`**: Generate a value based on the exact integer target.
-        - **`Calculated Length`**: Verify the candidate's length.
-        - **`Correction Action`**: If `Calculated Length` does not match `Target Length`, define the required padding or truncation. Otherwise, `N/A (Pass)`.
-        - **`Final Input Value`**: Apply the correction action to produce a value of the exact required length.
-    - **Case 2: `Target Length` is a range `[min, max]` (The "Soft Path" for Typical Values)**
-        - For these rows, the goal is contextual realism within the specified range.
-        - **`Generation Logic`**: State "Contextual Generation for Range `[min, max]`".
-        - `Candidate Value`: Generate a realistic, narrative-driven string appropriate for the field. The generated value's length should ideally fall within the more common-sense sub-range (e.g., 15-50 for a name) while still respecting the absolute boundaries of `[min, max]`.
-        - **`Padding Calculation`**: Set to `N/A`.
-        - **`Calculated Length`**: Count the candidate's length.
-        - **`Correction Action`**: This column now serves as a **verification check**.
-            - IF `Calculated Length` is within the `[min, max]` range (e.g., [2, 254]), this value MUST be `N/A (Pass)`.
-            - IF `Calculated Length` is outside the range, this value **MUST** be `FAIL (Out of Range)`.
-                - **You should then regenerate a different `Candidate Value` in the next row until it passes.**
-        - **`Final Input Value`**: If the check passes, this is an exact copy of the `Candidate Value`.
-    - **Case 3: `Target Length` is `N/A` (The "N/A Path" for Format/Logic Tests)**
-        - For these rows, the goal is to satisfy the **semantic or syntactic requirement** of the partition, and length is not a concern.
-        - **`Generation Logic`**: State "Semantic/Format Generation".
-        - **`Padding Calculation`**: Set to `N/A`.
-        - **`Candidate Value`**: Generate a string that satisfies the non-length requirement (e.g., an email without an '@').
-        - **`Calculated Length`**: Set to `N/A`.
-        - **`Correction Action`**: Set to `N/A`.
-        - **`Final Input Value`**: An exact copy of the `Candidate Value`.
-    3.  **Fill `Padding Calculation`**:
-        * This column is **ONLY** for `Case 1`. For all other logics, set it to `N/A`.
-        * For `Case 1`, you **MUST** explicitly write out the formula and result. **Format**: `[Target Length] - [Suffix Length] (for '[Suffix]') = [Padding Length]`.
-        * **Example**: `256 - 5 (for '@a.com') = 251`.
-    4.  **Generate `Candidate Value` (First Draft)**:
-        * Generate the value **strictly** according to the `Generation Logic` and `Padding Calculation` result.
-        * **CRITICAL**: This is your first attempt. If your calculation was `250`, you MUST generate a value based on `250`. **DO NOT** pre-correct it.
-        * The generated value MUST be the **full, actual string**. No placeholders.
-    5.  **Perform Structured Counting and Verification**:
-        * **Role**: You will now act as a meticulous and auditable 'Data Verifier' in this action. Your sole task is to verify the exact length of each `Candidate Value` generated in the previous step.
-        * **Governing Principles**: You MUST adhere to the following principles without exception:
-            1.  **Principle of Absolute Explicitness**: You are strictly forbidden from summarizing, abbreviating, or omitting any verification block for any reason, including brevity or repetition. Each `Candidate Value` **MUST** have its own complete, corresponding verification block generated. Any output like `"...omitted for brevity..."` is considered a direct violation of this primary instruction.
-            2.  **Principle of Sequential Self-Auditing**: After generating all individual verification blocks, you MUST perform a final self-audit step as described in the protocol below.
-        * **Core Method**: You are forbidden from stating the length directly. You **MUST** use the "Chunk and Sum" method described below for every string, especially for strings longer than 20 characters.
-        * **Execution Protocol (Chunk and Sum Method):**
-          For each `Candidate Value`, you must generate a dedicated verification block. This block must contain the following three parts in strict order:
-            1.  **Chunking Display**:
-                * Break the `Candidate Value` down into chunks of a fixed size. **A chunk size of 50 characters is recommended.**
-                * Display each chunk and its length. The last chunk might be smaller than the fixed size.
-                * Format: `Chunk N (Chars X-Y): "..." -> Length: Z`
-            2.  **Summation Calculation**:
-                * Write out the explicit mathematical formula, summing the lengths of all the chunks you displayed above.
-                * Format: `Final Calculation: 50 + 50 + ... + [length_of_last_chunk] = [Total Length]`
-            3.  **Final Declaration**:
-                * State the final, verified length clearly.
-                * Format: `Verified Length: [Total Length]`
-            4. **Write Result**: Write the final numerical value (an integer) from the counter into the `Calculated Length` column.
-    * **Final Audit Statement**: After the very last verification block has been generated, you MUST conclude with a final audit statement on a new line. First, count the total number of `Candidate Values` that required verification. Second, count the number of verification blocks you have just printed. These two numbers must match.
-        * **Format**: `AUDIT COMPLETE: Generated [N] verification blocks for [N] candidate values. All outputs are explicit and complete.`
-        * **Example**: `AUDIT COMPLETE: Generated 15 verification blocks for 15 candidate values. All outputs are explicit and complete.`
-    6.  **Determine `Correction Action` (Decision Step)**:
-        * You **MUST** compare `Target Length` and `Calculated Length`.
-        * If they are equal, this value **MUST** be `N/A (Pass)`.
-        * If `Calculated Length < Target Length`, you **MUST** describe the action (e.g., `Pad with 1 'X' character`).
-        * If `Calculated Length > Target Length`, you **MUST** describe the action (e.g., `Truncate to X characters`).
-    7.  **Generate `Final Input Value` (Final Product)**:
-        * If `Correction Action` is `N/A (Pass)`, this value **MUST** be identical to `Candidate Value`.
-        * If `Correction Action` describes an action, this value **MUST** be the result of applying that exact action to the `Candidate Value`.
-        * This column MUST contain the **full, final string**. No placeholders.
-| (TC ID, Field) | Assigned TR ID | Target Length | Generation Logic | Padding Calculation | Candidate Value | Calculated Length | Correction Action | Final Input Value |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-### **Step 4.3: Final Test Data Generation Table**
-**Objective**: To present the final, clean, and verified test data, where each value is guaranteed to be correct by the rigorous, self-correcting process documented in Step 4.2. Link each row to its physical UI element via XPath, ensuring it precisely adheres to all constraints through a verifiable process. This step creates the complete, single source of truth for all test data design.
+You **MUST** generate a complete markdown table with the columns below. This process enforces a "calculate, then construct, then verify" workflow.
+1. **Populate Initial Columns**: `Assigned TR ID` and `Target Length`.
+2. **Perform `Component Analysis & Pre-computation`**: This is a mandatory pre-calculation step. Before constructing the final value, you **MUST** first deconstruct the task and calculate the necessary parameters.
+    - **Action**: Analyze the `Target Length` and the semantic requirements of the `Assigned TR ID`. Determine the lengths of all literal and contractual parts needed.
+    - **Output**: State your calculation clearly.
+    - **Example**: `Target: 300. Required suffix: "@d.io" (length 5). Therefore, Contract Token length = 300 - 5 = 295.
+3. **Construct `Input Value`**:
+    - Use the parameters derived from the `Component Analysis` to construct the final, un-expanded `Input Value`.
+    - **Example**: `(String of 251 'A' characters)@d.io`.
+4. **Execute `Final Length Audit & Rationale`**:
+    - This is the final verification. You **MUST** perform a new, explicit calculation based on the `Input Value` you just constructed to prove its correctness.
+    - **Procedure**:
+        - Write out the summation formula based on the constructed value's components.
+        - Compare the result to the `Target Length` and append a `✅ PASS` or `❌ FAIL` status.
+        - Provide a brief concluding rationale.
+    - **Example**: `Audit: 295 (from token) + 5 (from literal) = 300. Result matches Target Length (300). ✅ PASS.`
+| (TC ID, Field) | Assigned TR ID | Target Length | Component Analysis & Pre-computation | Input Value | Final Length Audit & Rationale |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+### **Phase 4.3: Final Test Data Generation Table**
+**Objective**: To present the final, clean, and verified test data, where each value is guaranteed to be correct by the rigorous, self-correcting process documented in Phase 4.2. Link each row to its physical UI element via XPath, ensuring it precisely adheres to all constraints through a verifiable process. This phase creates the complete, single source of truth for all test data design.
 **Actions**:
 1. **Assemble Final Table**: Generate the final test data table.
 2. **XPath Integrity**: Verify the XPath and fill in.
@@ -468,10 +427,10 @@ You **MUST** strictly follow the sequence below, filling the table column by col
         - [Allowed] **Absolute Paths Only**: All XPaths MUST be absolute, starting from `/HTML[1]`.
             - [Disallowed] Relative paths (e.g., starting with `//` or `.`) are strictly forbidden.
 3.  **Traceability Mandate**:
-    * The `Input Value` MUST be an exact copy of the `Final Input Value` from the **Step 4.2 log**.
-    * The `Rationale` column MUST now explicitly reference the verification performed in the prior step.
-        * **For corrected values**: "Covers: `[FieldAbbrv]-CHR-[Type][Seq]-PRT-[Seq]`. **Truncated** from 65535 to 300 characters due to environment constraints, as documented and corrected in the Step 4.2 log."
-        * **For boundary values**: "Covers: `[FieldAbbrv]-CHR-[Type][Seq]-PRT-[Seq]`. The Step 4.2 log confirms through its self-correction process that the length is exactly 256."
+    * The `Input Value` **MUST** be an exact copy of the **`Input Value`** from the **`Phase 4.2 Value Generation and Length Audit Log`**.
+    * The `Rationale` column **MUST** now explicitly reference the verification performed in the prior steps and phases.
+        * **For corrected values**: "Covers: `[FieldAbbrv]-CHR-[Type][Seq]-PRT-[Seq]`. **Truncated** from 65535 to 300 characters due to environment constraints, as documented and corrected in the Phase 4.2 log."
+        * **For boundary values**: "Covers: `[FieldAbbrv]-CHR-[Type][Seq]-PRT-[Seq]`. The Phase 4.2 log confirms through its self-correction process that the length is exactly 256."
 | Test Case ID | Field Name | XPath | Assigned TR ID | Governing Scenario ID | Source Evidence ID | Input Value | Rationale |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 ## Step 5: Traceability, Verification, and Final Output
@@ -509,20 +468,20 @@ You **MUST** strictly follow the sequence below, filling the table column by col
 | Partition ID | Covered By Test Case ID(s) | Status |
 | :--- | :--- | :--- |
 ### 5.8 Concretization Traceability: Data to Design & Context
-**Objective**: To trace each concrete test data point back to both its abstract technical design (`TR`) and its contextual/narrative origins (`Scenario`, `Evidence`). The matrix is used to audit and has planned to be reviewed formally, so it **MUST** be generated. Please **CONFIRM** it's **COMPLETE**, containing one row for every single input value defined in the Step `4.3: Final Test Data Generation Table`. Missing any row or any data is **NOT ALLOWED**. No summarization is permitted.
+**Objective**: To trace each concrete test data point back to both its abstract technical design (`TR`) and its contextual/narrative origins (`Scenario`, `Evidence`). The matrix is used to audit and has planned to be reviewed formally, so it **MUST** be generated. Please **CONFIRM** it's **COMPLETE**, containing one row for every single input value defined in the `Phase 4.3: Final Test Data Generation Table`. Missing any row or any data is **NOT ALLOWED**. No summarization is permitted.
 | Composite Value ID (TC, Field) | Concrete Input Value | Target TR ID | Governing Scenario ID | Source Evidence ID |
 | :--- | :--- | :--- | :--- | :--- |
 ### 5.9 Final Verification Checklist
-**Objective**: To act as the final quality gate before delivering the results. In this step, you **MUST** perform a comprehensive, end-to-end audit of all artifacts generated in Steps 0 through 5. Your role is that of a Quality Assurance lead, meticulously verifying all traceability links. If any discrepancy, omission, or error is found, you **MUST** go back, correct the relevant table in the preceding steps, and then re-verify the entire chain before proceeding. After the audit is complete, you will summarize the results in the table below.
+**Objective**: To act as the final quality gate before delivering the results. In this phase, you **MUST** perform a comprehensive, end-to-end audit of all artifacts generated in Steps 0 through 5. Your role is that of a Quality Assurance lead, meticulously verifying all traceability links. If any discrepancy, omission, or error is found, you **MUST** go back, correct the relevant table in the preceding steps, and then re-verify the entire chain before proceeding. After the audit is complete, you will summarize the results in the table below.
 #### Audit and Correction Procedure
 You will now conduct a holistic review by following these traceability threads:
 1. **Foundation Audit (Evidence -> Characteristic -> Partition)**:
     * **Inspection Phase**:
-        * **Task**: You **MUST** use the `5.2 Characteristic-to-Evidence Traceability Matrix` to **verify** that every `Characteristic ID` in the `Step 1.2 Input Partitioning Matrix` is logically and explicitly traceable to a source `Evidence ID` from the `Step 0.1 Evidence Library`.
+        * **Task**: You **MUST** use the `5.2 Characteristic-to-Evidence Traceability Matrix` to **verify** that every `Characteristic ID` in the `Phase 1.2 Input Partitioning Matrix` is logically and explicitly traceable to a source `Evidence ID` from the `Phase 0.1 Evidence Library`.
         * **Task**: You **MUST** also use the `5.3 Partition-to-Characteristic Traceability Matrix` to **confirm** that all `Partition ID`s correctly link to their parent `Characteristic`.
         * **Determination**: If any broken traceability links, inconsistencies, or omissions are found, it's determined as a **FAILURE**.
     * **Correction Phase**:
-        * **Task**: If the inspection phase results in a **FAILURE**, you **MUST immediately** return to the relevant tables in `Step 0.1` or `Step 1.2` and **perform the necessary corrections** to establish correct traceability or fill in omissions.
+        * **Task**: If the inspection phase results in a **FAILURE**, you **MUST immediately** return to the relevant tables in `Phase 0.1` or `Phase 1.2` and **perform the necessary corrections** to establish correct traceability or fill in omissions.
         * **Re-Verification**: After correction, you **MUST** **re-execute** the entire `Audit and Correction Procedure` from the beginning to ensure the correction hasn't introduced new issues, and proceed only when all items **PASS**.
 2. **Strategic Intent Audit (Evidence -> Scenario -> Test Case)**:
     * **Inspection Phase**:
@@ -555,12 +514,12 @@ You will now conduct a holistic review by following these traceability threads:
 After performing the comprehensive audit and any necessary corrections as described above, you **MUST** summarize the results in the following table.
 | Audit Area | Verification Method | Key Artifacts Audited | Corrections Made? | Final Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **1. Foundation** | Traced `Characteristics` & `Partitions` back to source `Evidence`. | Step 0.1, Step 1, 5.1, 5.2, 5.3 |  |  |
-| **2. Strategic Intent** | Traced `Test Cases` back to `Scenarios` and their source `Evidence`. | Step 0.2, Step 3, 5.1, 5.5 |  |  |
-| **3. Technical Design** | Performed a full downward trace from `TC` -> `TR` -> `Partition`. | Step 2, Step 3, 5.4, 5.6 |  |  |
-| **4. Coverage & Integrity** | Verified 100% partition coverage, data coherence, and XPath validity. | Step 4, 5.7, 5.8 |  |  |
+| **1. Foundation** | Traced `Characteristics` & `Partitions` back to source `Evidence`. | Phase 0.1, Step 1, Phase 5.1, 5.2, 5.3 |  |  |
+| **2. Strategic Intent** | Traced `Test Cases` back to `Scenarios` and their source `Evidence`. | Phase 0.2, Step 3, Phase 5.1, 5.5 |  |  |
+| **3. Technical Design** | Performed a full downward trace from `TC` -> `TR` -> `Partition`. | Step 2, Step 3, Phase 5.4, 5.6 |  |  |
+| **4. Coverage & Integrity** | Verified 100% partition coverage, data coherence, and XPath validity. | Step 4, Phase 5.7, 5.8 |  |  |
 #### 5.10: Organize Result
-**Objective**: To internally assemble, conduct a comprehensive audit, and correct the final executable test actions before generating a single, fully verified output table. This step acts as the ultimate quality gate, ensuring the output is a perfect, atom-level reflection of the previously verified design.
+**Objective**: To internally assemble, conduct a comprehensive audit, and correct the final executable test actions before generating a single, fully verified output table. This phase acts as the ultimate quality gate, ensuring the output is a perfect, atom-level reflection of the previously verified design.
 **Actions**:
 1.  **Internal Assembly**: Based on the `Test Case Design Matrix` (Step 3) and the `Test Data Generation` table (Step 4), you will first internally assemble the complete, row-by-row data for the final output table. **You will not print anything at this stage.**
 2.  **Comprehensive Pre-Output Audit (MANDATORY)**: Before generating any output, you **MUST** perform a final, silent, and comprehensive self-audit. For every single action row you have assembled internally, you will perform a three-point verification:
@@ -578,7 +537,7 @@ After performing the comprehensive audit and any necessary corrections as descri
         - **`Test Case` and `Scenario`**: These values MUST only be present on the **first** action row of each test case block. For all subsequent rows within the same block, these columns MUST be left empty.
         - **`Expected Test Result`**: This value MUST only be present on the last action row of each test case block (the "submit" action). For all other rows, this column MUST be left empty.
 - **Submission**: Every test case must conclude with a form submission action (e.g., clicking a submit button).
-- **Expected Test Result**: This column traces back to the `Expected Outcome` defined in the `Step 3: Test Case Design Matrix`. It is consolidated into a simple "Passed" or "FAILED" status.
+- **Expected Test Result**: This column traces back to the `Expected Test Result` defined in the `Step 3: Test Case Design Matrix`. It is consolidated into a simple "Passed" or "FAILED" status.
 | Test Case | Scenario | xpath | action_number | input_value | Expected Test Result |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 # REQUIRED INPUTS
@@ -591,21 +550,21 @@ After performing the comprehensive audit and any necessary corrections as descri
 }
 ```
 """) + """## **Business Context**:
-`{business_context}`
+{business_context}
 ## **User Personas & Stories**:
-`{user_personas_and_stories}`
+{user_personas_and_stories}
 ## **Technology Stack**:
-`{tech_stack}`
+{tech_stack}
 ## **Quality Requirement**:
-`{quality_requirements}`
+{quality_requirements}
 ## Form XPath:
-`{form_xpath}`
+{form_xpath}
 ## Page DOM Hierarchy:
-`{dom}`
+{dom}
 ## Provided Field XPaths:
-`{field_xpaths}`"""
+{field_xpaths}"""
         elif selector == "extract_web_info":
-            return SystemPromptFactory._escape_all_braces("""# 🧠 Modular Web Intelligence Analysis Prompt
+            return SystemPromptFactory._escape_all_braces("""# Modular Web Intelligence Analysis Prompt
 ## Overview
 You are a modular AI web analyst that analyzes websites across four major dimensions:
 1. **Business Logic & Goal Inference**
@@ -614,7 +573,7 @@ You are a modular AI web analyst that analyzes websites across four major dimens
 4. **Inferred Quality Requirements**
 Your task is to unify and synthesize insights across all available sources, including structured data, HTML DOM, content tone, CTA language, and more. All modules support schema-based, confidence-scored, evidence-backed output.
 ---
-## 🔧 Configuration (Extended)
+## Configuration
 ```json
 {
   "analysisModules": [
@@ -638,9 +597,9 @@ Your task is to unify and synthesize insights across all available sources, incl
 }
 ```
 ---
-## 🧩 Module Definitions and Unified Intelligence Plugins
+## Module Definitions and Unified Intelligence Plugins
 ### 1. Business Logic & Goal Inference (`goalInference`)
-#### 🔍 Sources and Plugins
+#### Sources and Plugins
 - **Structured Data**: `JSON-LD @type`, `applicationCategory`, `featureList`
 - **Metadata**: `meta[name=description]`, `meta[name=keywords]`, Open Graph, Twitter Card
 - **Page Structure**: `<h1>` - `<h3>` hierarchy, breadcrumb, navigation structure
@@ -648,12 +607,12 @@ Your task is to unify and synthesize insights across all available sources, incl
 - **Routing & Path Analysis**: `/checkout`, `/blog`, `/api/reference`
 - **Semantic Classifier**: Application type classification (e.g., `MarketingSite`, `E-Commerce`, `LearningPlatform`)
 - **Custom Vocabulary Match**: Domain-specific trigger terms boost confidence
-#### 🔁 Output Structure
+#### Output Structure
 - `applicationType`, `coreBusinessGoal`, `supportingFunctionality`
 - All outputs include `confidenceScore` and `justification`
 ---
 ### 2. Personas & User Stories (`personaProfiling`)
-#### 🔍 Sources and Plugins
+#### Sources and Plugins
 - **JSON-LD**: `@type: Audience`, `Person`, `EducationalAudience`
 - **HTML Structure**: `<html lang>`, `<nav>`, `<footer>`, headings
 - **Tone & Voice**: Language from blog, about page, FAQ
@@ -661,15 +620,15 @@ Your task is to unify and synthesize insights across all available sources, incl
 - **Internationalization**: `hreflang`, `lang`, location-based content
 - **Persona Clustering Engine**: Cluster primary, secondary, edge personas
 - **Few-shot Example Matching**: Reference to existing annotated personas
-#### 🎯 Generation Rules
+#### Generation Rules
 - **Minimum Quantity**: Generate a minimum of 8 total personas across all categories (`primary`, `secondary`, `edgeCases`), provided sufficient evidence exists on the target website.
 - **Distribution**: Aim for a distribution of at least 3 `primary`, 3 `secondary`, and 2 `edgeCases` persona, but adjust based on evidence.
-#### 🔁 Output Structure
+#### Output Structure
 - `targetAudiencePersonas`: Grouped by `primary`, `secondary`, `edgeCases`
 - Each persona: name, type, user story, goals, pain points, confidenceScore, behavioralEvidence
 ---
 ### 3. Technology Stack (`techStack`)
-#### 🔍 Sources and Plugins
+#### Sources and Plugins
 - **Script Detection**: `<script src>`, CDN links, file names
 - **Class/ID Patterns**: UI framework hints via `className`
 - **JS Globals & Signatures**: `window.React`, `__NEXT_DATA__`
@@ -678,11 +637,11 @@ Your task is to unify and synthesize insights across all available sources, incl
 - **CDN & Hosting Detection**: `Vercel`, `Cloudflare`, Netlify
 - **Dependency Chain Inferencer**: e.g., `Next.js` → `React`
 - **Rendering Strategy Detector**: CSR, SSR, SSG, Hybrid
-#### 🔁 Output Structure
+#### Output Structure
 - `technologyStack`: Categorized with `confidenceScore`, `partialMatch`, `inferredVia`, `detectedFrom`
 ---
 ### 4. Quality Requirements (`qualityAttributes`)
-#### 🔍 Sources and Plugins
+#### Sources and Plugins
 - **Application Type Mapping**: e.g., Developer Tools → Usability, Reliability
 - **Persona Types**: B2C → Accessibility; B2B/Enterprise → Security, Compliance
 - **Technology Signals**: Usage of `Sentry`, `OAuth`, CDN
@@ -690,27 +649,27 @@ Your task is to unify and synthesize insights across all available sources, incl
 - **Brand Language**: Values like "sustainable", "secure", "mission-driven"
 - **Custom Vocabulary Match**: "PCI compliance", "certification", "scalability"
 - **Quality Classifier**: Match structure and content with ISO-25010-style traits
-#### 🔁 Output Structure
+#### Output Structure
 - List of quality attributes with `confidenceScore` and `justification`
 ---
-## 🧠 Inference Enhancement Features (Shared Across Modules)
-### ✅ Evidence Aggregation Engine
+## Inference Enhancement Features (Shared Across Modules)
+### Evidence Aggregation Engine
 - Cross-module signal linking (e.g., Persona → Goal → Quality)
 - Deduplicated justification strings
-### ✅ Few-shot Reference Matching
+### Few-shot Reference Matching
 - Incorporates examples from diverse domains: SaaS, Education, Commerce
-### ✅ Confidence Tuner
+### Confidence Tuner
 - Boosts or softens outputs based on evidence depth and diversity
-### ✅ Quality Assurance Rules
+### Quality Assurance Rules
 - Validates each module's output structure, diversity, and coverage
 ---
-## ✅ Integrated Few-shot Examples Included (see prompt extension)
+## Integrated Few-shot Examples Included (see prompt extension)
 - Developer API platform (SaaS)
 - Educational content site (Online Courses)
 - Consumer product site (Eco-commerce)
 Each example uses all four modules with consistent format, justification, and persona-driven logic.
 ---
-# 🔄 Default Output Format (JSON)
+# Default Output Format (JSON)
 Always return results using this unified JSON structure:
 ```json
 {
