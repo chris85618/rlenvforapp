@@ -284,14 +284,16 @@ This section provides a complete, end-to-end demonstration of the process define
 **Action**:
 1. **Core Principle: Scenario Synthesis and Versioning**: Whenever a Test Case (a new base TC or a new version of an existing TC) is constructed, its `Scenario Narrative` **MUST** be specifically synthesized to match its unique TR combination. This process is the **official source of truth for creating and versioning all new scenarios** and follows these strict sub-steps:
    1. **Select Base Scenario**: A base `Scenario Template` (e.g., `SCN-HP-01v1`) is selected from the `Phase 0.2` library based on the TC's primary intent.
-   2. **Synthesize GWT Narrative**: The Gherkin text of the base scenario is revised and augmented to accurately describe the full set of conditions tested by the TC's specific TR combination.
-      - The final, revised narrative **MUST** strictly adhere to the Gherkin `Given-When-Then` format. It **MUST** contain the keywords `Given`, `When`, and `Then`, each on a new line.
-        > **Given**: Sets the initial context.
-        > **When**: Defines the trigger or action.
-        > **Then**: Describes the verifiable outcome.
+   2. **Synthesize Gherkin Narrative**: The Gherkin text of the base scenario is revised and augmented to accurately describe the full set of conditions tested by the TC's specific TR combination.
+      - The final, revised narrative **MUST** strictly adhere to the Gherkin `Given-When-Then` format. It **MUST** contain the keywords `Feature`, `Scenario`, `Given`, `When`, and `Then`, each on a new line.
+        > **Feature**: Describes a software capability.
+        > **Scenario**: An example of how the feature works.
+        > **Given**: The initial state, context, or setup.
+        > **When**: The action taken or triggered by the user.
+        > **Then**: The verifiable expected result or outcome.
    3. **Assign New Scenario ID**: This new, synthesized narrative is assigned a new, unique versioned ID. The logic is to find the highest existing version for the base Scenario ID (e.g., `SCN-HP-01`) and increment it by 1 (e.g., creating `SCN-HP-01v2`, `SCN-HP-01v3`...).
    4. **Define Expected Outcome**: Based on the `Then` clause of the newly synthesized narrative, a brief `Expected Outcome` summary **MUST** be generated (e.g., `Submission successful`, `Error: Invalid email format`).
-   5. **Record for Final Output**: The complete details of this new scenario (its new ID, title, full GWT narrative, etc.) **MUST** be recorded for later inclusion in the final `Scenarios Library (Revised)` table.
+   5. **Record for Final Output**: The complete details of this new scenario (its new ID, title, full Gherkin narrative, etc.) **MUST** be recorded for later inclusion in the final `Scenarios Library (Revised)` table.
    - This principle is absolute and applies to all TC creation and evolution actions within this Step.
 2. **Initialize Test Case Ledger**: The process begins by creating an initial set of Test Cases. This set is stored in a temporary internal ledger that tracks all versions created during the process.
    1. **Identify Driver Field & Determine Base Count** 
