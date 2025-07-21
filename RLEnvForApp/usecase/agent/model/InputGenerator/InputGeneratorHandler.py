@@ -105,6 +105,9 @@ def parse_markdown_to_HighLevelAction(markdown_text:str, page_dom:str, form_xpat
                 appEventBuilder = AppEventBuilder()
             elif key == "Expected Test Result":
                 pass
+    if len(appEventList) > 0:
+        highLevelactionList.append(HighLevelAction(*appEventList, page_dom=page_dom, form_xpath=form_xpath))
+        appEventList = []
     return HighLevelActionList(highLevelactionList)
     
 class InputGeneratorHandler:
