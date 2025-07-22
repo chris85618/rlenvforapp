@@ -113,10 +113,10 @@ def parse_markdown_to_HighLevelAction(markdown_text:str, page_dom:str, form_xpat
 class InputGeneratorHandler:
     llm_service = None
     parser = None
-    quality_requirements:Optional[str] = None
-    tech_stack:Optional[str] = None
-    user_personas_and_stories:Optional[str] = None
-    business_context:Optional[str] = None
+    quality_requirements:Optional[str] = ""
+    tech_stack:Optional[str] = ""
+    user_personas_and_stories:Optional[str] = ""
+    business_context:Optional[str] = ""
     format_instructions:str = ""
 
     def __init__(self, llm_service: ILlmService = Gemini()):
@@ -128,7 +128,7 @@ class InputGeneratorHandler:
 
     def get_response(self, dom, form_xpath:str, field_xpath_list:list[str]):
         exception = None
-        self.update_web_extracted_data(dom)
+        # self.update_web_extracted_data(dom)
         # Form XPath
         formatted_form_xpath = XPathFormatter.format(form_xpath)
         # Field XPath List
@@ -147,18 +147,18 @@ class InputGeneratorHandler:
             print(markdown_doc_str)
         raise exception
 
-    def update_web_extracted_data(self, page_dom):
-        if self.quality_requirements is None or self.tech_stack is None or self.user_personas_and_stories is None or self.business_context is None:
-            # Update web extracted data
-            page_dom_extractor = PageDomExtractor()
-            page_dom_info = page_dom_extractor.get_response(page_dom)
-            self.business_context = page_dom_extractor.getBusinessContextStr()
-            self.user_personas_and_stories = page_dom_extractor.getUserPersonasAndStoriesStr()
-            self.tech_stack = page_dom_extractor.getTechnologyStackStr()
-            self.quality_requirements = page_dom_extractor.getQualityAttributesStr()
-            try:
-                os.makedirs(DIRPATH)
-            except FileExistsError:
-                pass
-            with open(PAGE_INFO_PATH, "w", encoding='utf8') as page_info_file:
-                page_info_file.write(json.dumps(page_dom_info, indent=4, ensure_ascii=False))
+    # def update_web_extracted_data(self, page_dom):
+    #     if self.quality_requirements is None or self.tech_stack is None or self.user_personas_and_stories is None or self.business_context is None:
+    #         # Update web extracted data
+    #         page_dom_extractor = PageDomExtractor()
+    #         page_dom_info = page_dom_extractor.get_response(page_dom)
+    #         self.business_context = page_dom_extractor.getBusinessContextStr()
+    #         self.user_personas_and_stories = page_dom_extractor.getUserPersonasAndStoriesStr()
+    #         self.tech_stack = page_dom_extractor.getTechnologyStackStr()
+    #         self.quality_requirements = page_dom_extractor.getQualityAttributesStr()
+    #         try:
+    #             os.makedirs(DIRPATH)
+    #         except FileExistsError:
+    #             pass
+    #         with open(PAGE_INFO_PATH, "w", encoding='utf8') as page_info_file:
+    #             page_info_file.write(json.dumps(page_dom_info, indent=4, ensure_ascii=False))
